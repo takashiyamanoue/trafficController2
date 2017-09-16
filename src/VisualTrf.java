@@ -39,19 +39,21 @@ public class VisualTrf {
 		public String [] state;
 		public int direction;
 		public String match;
-		public PData(long fNum, long lt, String[] st, int i, String mt){
+		public int protocolBit;
+		public PData(long fNum, long lt, String[] st, int i, String mt, int px){
 			frameNumber=fNum;
 			longTime=lt;
 			state=st;
 			direction=i;
 			match=mt;
+			protocolBit=px;
 		}
 	}
 	
 	public VisualTrf(MainFrame m,long frameNumber, long lt, String[] state,
-			int [] address, int direction, String match){
+			int [] address, int direction, String match,int protocolBit){
 		pdata=new Vector();
-		PData pdatax=new PData(frameNumber,lt,state,direction,match);
+		PData pdatax=new PData(frameNumber,lt,state,direction,match,protocolBit);
 		pdata.add(pdatax);
 		mainFrame=m;
 		if(direction!=2){
@@ -64,7 +66,7 @@ public class VisualTrf {
 		}
 	}
 	
-	//�h�o�A�h���X�̏d���m�F
+	//�ｿｽh�ｿｽo�ｿｽA�ｿｽh�ｿｽ�ｿｽ�ｿｽX�ｿｽﾌ重�ｿｽ�ｿｽ�ｿｽm�ｿｽF
 	public boolean existIP(String ipaddress){
 		String ip = ipaddress;
 		for(int i=0;i<paneNumber;i++){
@@ -90,8 +92,8 @@ public class VisualTrf {
 	}
 	
 	public void coutup(long frameNumber,long lt, 
-			   String[] state,int direction, String match){
-		PData pdatax=new PData(frameNumber,lt,state,direction,match);
+			   String[] state,int direction, String match,int protocolBit){
+		PData pdatax=new PData(frameNumber,lt,state,direction,match,protocolBit);
 		pdata.add(pdatax);
 	}
 
@@ -99,7 +101,7 @@ public class VisualTrf {
 
 	}
 
-	//8/15�ύX
+	//8/15�ｿｽﾏ更
 	/*
 	public synchronized void appendDetail(String b,String t,String p){
 		
@@ -133,13 +135,28 @@ public class VisualTrf {
 			PData pdatax=pdata.elementAt(i);
 			String protocol=pdatax.state[2];
 			int thisProtocol=0;
+			/*
 			if(protocol.equals("tcp"))
-				thisProtocol=0x01;
+				thisProtocol=0x001;
 			else
 			if(protocol.equals("udp"))
-				thisProtocol=0x02;
+				thisProtocol=0x002;
 			else
+			if(protocol.equals("icmpv4"))
+				thisProtocol=0x004;
+			if(protocol.equals("tcpv6"))
+				thisProtocol=0x010;
+			else
+			if(protocol.equals("udpv6"))
+				thisProtocol=0x020;
+			else
+			if(protocol.equals("ipv6hopbyhop"))
 				thisProtocol=0x04;
+			else
+			if(protocol.equals("ipv6Destination"))
+				thisProtocol=0x04;
+			*/
+			thisProtocol=pdatax.protocolBit;
 			String directionX="";
 			String fromx = pdatax.state[3];
 			String tox=pdatax.state[4];
@@ -215,7 +232,7 @@ public class VisualTrf {
 
 	}	
 
-	//8/5�ɉ��
+	//8/5�ｿｽﾉ会ｿｽ�ｿｽ
 	/*
 	public void showDetail(){
 		jf = new JFrame("Detail "+uipa+":"+uport);

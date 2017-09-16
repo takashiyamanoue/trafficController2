@@ -120,13 +120,13 @@ public class TrafficLogManager {
 		         " prtcl="+p.protocol+" "+p.sourceIpString+" -> "+p.destinationIpString+
 		         " "+p.sport+"->"+p.dport+" "+states[0];
 		main.writePacketMessage(wmessage);
-		this.orgLog(packetNumber, t,states, address,match);		
+		this.orgLog(packetNumber, t,states, address,match,p.protocolBit);		
 		packetNumber++;
 	}
 	VisualTrf vt;
 	MainWatch mainWatch;
 	
-	public void orgLog(long fn, long lt,String[] state, int[] address, String match){
+	public void orgLog(long fn, long lt,String[] state, int[] address, String match,int protocolBit){
 		if(main!=null){
 			if(main.mainWatch!=null){
 				mainWatch=main.mainWatch;
@@ -181,22 +181,22 @@ public class TrafficLogManager {
 		*/
 		if(fromTo==1||fromTo==4){
 		  if(checkExistDst(dstIpaunder,dstPortunder) == true){
-			vt =new VisualTrf(main,frameNumber,lt,state,address,fromTo,match);
+			vt =new VisualTrf(main,frameNumber,lt,state,address,fromTo,match,protocolBit);
  		    mainWatch.vtraffic[dstIpaunder][dstPortunder] = vt;
 			System.out.println("new point [  "+ dstIpaunder +"  "+dstPortunder+"] ");
 		  }
 		  else{
-			mainWatch.vtraffic[dstIpaunder][dstPortunder].coutup(frameNumber,lt,state,fromTo,match);
+			mainWatch.vtraffic[dstIpaunder][dstPortunder].coutup(frameNumber,lt,state,fromTo,match,protocolBit);
 		  }
 		}
 		else{
 		  if(checkExistDst(srcIpaunder,srcPortunder) == true){
-			vt =new VisualTrf(main,frameNumber,lt,state,address,fromTo,match);
+			vt =new VisualTrf(main,frameNumber,lt,state,address,fromTo,match,protocolBit);
 		    mainWatch.vtraffic[srcIpaunder][srcPortunder] = vt;
 			System.out.println("new point [  "+ srcIpaunder +"  "+srcPortunder+"] ");
 		  }
 		  else{
-			mainWatch.vtraffic[srcIpaunder][srcPortunder].coutup(frameNumber,lt,state,fromTo,match);
+			mainWatch.vtraffic[srcIpaunder][srcPortunder].coutup(frameNumber,lt,state,fromTo,match,protocolBit);
 		  }
 			
 		}

@@ -1,5 +1,6 @@
 package pukiwikiCommunicator;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Date;
 
@@ -10,7 +11,9 @@ import org.pcap4j.packet.IcmpV4CommonPacket;
 import org.pcap4j.packet.IcmpV4InformationRequestPacket;
 import org.pcap4j.packet.IcmpV6CommonPacket;
 import org.pcap4j.packet.IpV4Packet;
+import org.pcap4j.packet.IpV6ExtDestinationOptionsPacket;
 import org.pcap4j.packet.IpV6ExtHopByHopOptionsPacket;
+import org.pcap4j.packet.IpV6ExtOptionsPacket;
 import org.pcap4j.packet.IpV6Packet;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
@@ -53,8 +56,10 @@ public class ParsePacket {
 	public ArpPacket arp = null;
 //    static public Icmp icmp = new Icmp();
 	public IcmpV4CommonPacket icmp = null;
-	public IcmpV6CommonPacket icmpv6 = null;
-	public IpV6ExtHopByHopOptionsPacket ipv6hopbyhop=null;
+	public IcmpV6CommonPacket icmpV6Common = null;
+	public IpV6ExtHopByHopOptionsPacket ipv6Hopbyhop=null;
+	public IpV6ExtDestinationOptionsPacket ipv6Destination=null;
+	
 //	public final Http http = new Http();
 	public String sourceMacString="";
 	public String destinationMacString="";
@@ -62,6 +67,7 @@ public class ParsePacket {
 	public String destinationIpString="";
 	public String etherString="";
 	public String protocol="";
+	public int protocolBit=0x000;
 //	public byte[] payload;
 	public Packet payload;
 	public String ipString="";
@@ -99,7 +105,9 @@ public class ParsePacket {
     	arp=null;
     	icmp=null;
     	ipv6=null;
-    	icmpv6=null;
+    	icmpV6Common=null;
+    	ipv6Hopbyhop=null;
+    	ipv6Destination=null;
 		states[0]="unknown";
 		if(packet==null) return;
 //			  if (packet.hasHeader(eth)) {
@@ -165,6 +173,7 @@ public class ParsePacket {
 				            " spa-"+sourceIpString+
 				            " tpa-"+destinationIpString;
 				states[0]=arpString;
+				protocolBit=0x100;
 		   }
 		   catch(Exception e){
 				System.out.println("ParsePacket arp error: "+e);
@@ -172,427 +181,11 @@ public class ParsePacket {
 		   }
 	    }
 	    else
-		if(packet.contains(IpV4Packet.class)) {
-			try{
-//				   packet.getHeader(ip);
-				ipv4=(IpV4Packet)(packet.getPayload());
-				IpV4Packet.IpV4Header ip4h=ipv4.getHeader();
-				InetAddress ipSrcAddr= ip4h.getSrcAddr();
-//				   sourceIpString = FormatUtils.ip(ip.source());
-				sourceIpString=ipSrcAddr.toString().substring(1);
-//				   destinationIpString = FormatUtils.ip(ip.destination());
-				InetAddress ipDstAddr =ip4h.getDstAddr();
-//				destinationIpString = ip4h.getDstAddr().toString();
-				destinationIpString = ipDstAddr.toString().substring(1);
-//				System.out.printf("#%d: ip.src=%s\n", packet.getFrameNumber(), str);
-//				System.out.printf("#%d: ip.src=%s\n", n, sip);
-				/*
-					address[0]= 0xff & (ip.source()[0]);
-					address[1]= 0xff & (ip.source()[1]);
-					address[2]= 0xff & (ip.source()[2]);
-					address[3]= 0xff & (ip.source()[3]);
-					address[6]= 0xff & (ip.destination()[0]);
-					address[7]= 0xff & (ip.destination()[1]);
-					address[8]= 0xff & (ip.destination()[2]);
-					address[9]= 0xff & (ip.destination()[3]);	
-					*/
-				address[0]=0xff & (ipSrcAddr.getAddress()[0]);
-				address[1]=0xff & (ipSrcAddr.getAddress()[1]);
-				address[2]=0xff & (ipSrcAddr.getAddress()[2]);
-				address[3]=0xff & (ipSrcAddr.getAddress()[3]);
-				address[6]=0xff & (ipDstAddr.getAddress()[0]);
-				address[7]=0xff & (ipDstAddr.getAddress()[1]);
-				address[8]=0xff & (ipDstAddr.getAddress()[2]);
-				address[9]=0xff & (ipDstAddr.getAddress()[3]);
-
-				    ipString=sourceIpString+"->"+destinationIpString+" ";
-			}
-			catch(Exception e){
-				System.out.println("ParsePacket error ip: "+e);
-				return;
-			}
-//			if(packet.hasHeader(tcp)){
-			if(ipv4!=null) {
-			if(ipv4.contains(TcpPacket.class)) {
-				try {
-//		    	          packet.getHeader(tcp);
-		            	tcp=(TcpPacket)(ipv4.getPayload());
-		            	TcpPacket.TcpHeader tcph=tcp.getHeader();
-		    	          try{
-//			    	            payload=tcp.getPayload();
-		    	        	  payload=tcp.getPayload();
-			    	      }
-			    	      catch(Exception e){
-//			    		        payload=new byte[]{'e','r','r','o','r'};
-			    		        System.out.println("ParsePacket get tcpPayload error: "+e);
-			    		        return;
-			    	      }
-		    	          protocol="tcp";
-		    	          /*
-		    	          sport=tcp.source();
-		    	          dport=tcp.destination();
-		  				  address[4]= 0xff & (sport>>8);
-						  address[5]= 0xff & sport;
-						  address[10]= 0xff & (dport>>8);
-						  address[11]= 0xff & dport;
-				          String flags="-";
-				          if(tcp.flags_SYN()) flags=flags+"SYN-";
-				          if(tcp.flags_ACK()) flags=flags+"ACK-";
-				          if(tcp.flags_PSH()) flags=flags+"PSH-";
-				          if(tcp.flags_FIN()) flags=flags+"FIN-";
-				          if(tcp.flags_RST()) flags=flags+"RST-";
-				          if(tcp.flags_CWR()) flags=flags+"CWR-";
-				          if(tcp.flags_URG()) flags=flags+"URG-";
-		    	          payloadString=SBUtil.showAsciiInBinary(payload);
-		    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
-		  				  states[0]=flags+" "+payloadString;
-		  				  */
-		    	          sport=tcph.getSrcPort().valueAsInt();
-		    	          dport=tcph.getDstPort().valueAsInt();
-		    	          address[4]=0xff & (sport>>8);
-		    	          address[5]=0xff & (sport);
-		    	          address[10]=0xff & (dport>>8);
-		    	          address[11]=0xff & dport;
-		    	          String flags="-";
-		    	          if(tcph.getSyn()) flags=flags+"SYN-";
-		    	          if(tcph.getAck()) flags=flags+"ACK-";
-		    	          if(tcph.getPsh()) flags=flags+"PSH-";
-		    	          if(tcph.getFin()) flags=flags+"FIN-";
-		    	          if(tcph.getRst()) flags=flags+"RST-";
-		    	          if(tcph.getUrg()) flags=flags+"URG-";
-		    	          if(payload!=null)
-		    	            try {
-		    	               payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-		    	            }
-		    	            catch(Exception e) {
-  	        	               System.out.println("ParsePacket tcp error while Making payload String:"+payload.toString()+":"+e.toString());
-  	                        }
-		    	          else
-		    	        	  payloadString="";
-		    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
-		    	          states[0]=flags+" "+payloadString;
-
-		            }
-		            catch(Exception e){
-		            	System.out.println("ParsePacket tcp error: "+e);
-		            	return;
-		            }
-		    }
-		    else
-//		    if(packet.hasHeader(udp)){
-		    if(ipv4.contains(UdpPacket.class)) {
-		            try{
-		            	udp=(UdpPacket)(ipv4.getPayload());
-//		    	          packet.getHeader(udp);
-		            	UdpPacket.UdpHeader udph=udp.getHeader();
-		    	          protocol="udp";
-		    	          /*
-		    	          sport=udp.source();
-		    	          dport=udp.destination();
-		    	          */
-		    	          sport=udph.getSrcPort().valueAsInt();
-		    	          dport=udph.getDstPort().valueAsInt();
-		    	    
-		  				  address[4]= 0xff & (sport>>8);
-						  address[5]= 0xff & sport;
-						  address[10]= 0xff & dport>>8;
-						  address[11]= 0xff & dport;
-						  /**/
-		    	          
-		    	          try{
-		    	              payload=udp.getPayload();
-		    	          }
-		    	          catch(Exception e){
-		    		          System.out.println("ParsePacket getUdpPayload error:"+e);
-//		    		          payload=new byte[]{'e','r','r','o','r','-','g','e','t','P','a','y','l','o','a','d'};
-		    		          return;
-		    	          }
-		    	          if(payload==null) {
-			    	          l4String="udp "+sport+"->"+dport+" (no payload)";
-			    	          payloadString="(no payload)";
-			    	          states[0]=payloadString;		    	        	  
-		    	          }
-		    	          else {
-			    	          l4String="udp "+sport+"->"+dport+" "+SBUtil.showAsciiInBinary(payload.getRawData());
-			    	          payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-			    	          states[0]=payloadString;
-		    	          }
-		            }
-		            catch(Exception e){
-		            	System.out.println("ParsePacket udp error: "+e);
-		            	return;
-		            }
-		    }
-		    else
-//		  	if(packet.hasHeader(icmp)){
-		    if(ipv4.contains(IcmpV4CommonPacket.class))
-		  			try{
-//		  				  packet.getHeader(icmp);
-		  				icmp = (IcmpV4CommonPacket)(ipv4.getPayload());
-						  protocol ="icmp";
-						  address[4]= 0;
-						  address[5]= 0;
-						  address[10]= 0;
-						  address[11]= 0;
-//						  String icmpString=icmp.checksumDescription();
-						  String icmpString=icmp.getHeader().getCode().toString();
-						  try {
-						     payload=icmp.getPayload();
-						  }
-						  catch(Exception e) {
-						  }
-						  if(payload!=null) {
-						     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-						     states[0]=icmpString+" "+payloadString;
-						  }
-						  else {
-							  states[0]=icmpString+" (icmpv4- no payload)";
-						  }
-					 }
-		  			catch(Exception e){
-		  				System.out.println("ParsePacket error icmp:"+e);
-		  				return;
-		  			}
-			}
-			else{
-					try{
-						  protocol ="ip-N/A";
-						  sport=0;
-						  dport=0;
-						  payload=ipv4.getPayload();
-						  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-						  states[0]=payloadString;
-					}
-					catch(Exception e){
-						System.out.println("ParsePacket error ip-n/a: "+e);
-						return;
-					}
-			}			
-	    }
+        if(isIpV4(packet)) {}
 		else 
-		if(packet.contains(IpV6Packet.class)) {
-			try{
-//				   packet.getHeader(ip);
-				ipv6=(IpV6Packet)(packet.getPayload());
-				IpV6Packet.IpV6Header ip6h=ipv6.getHeader();
-				InetAddress ipSrcAddr= ip6h.getSrcAddr();
-//				   sourceIpString = FormatUtils.ip(ip.source());
-				sourceIpString=ipSrcAddr.toString().substring(1);
-//				   destinationIpString = FormatUtils.ip(ip.destination());
-				InetAddress ipDstAddr =ip6h.getDstAddr();
-//				destinationIpString = ip4h.getDstAddr().toString();
-				destinationIpString = ipDstAddr.toString().substring(1);
-//				System.out.printf("#%d: ip.src=%s\n", packet.getFrameNumber(), str);
-//				System.out.printf("#%d: ip.src=%s\n", n, sip);
-				/*
-					address[0]= 0xff & (ip.source()[0]);
-					address[1]= 0xff & (ip.source()[1]);
-					address[2]= 0xff & (ip.source()[2]);
-					address[3]= 0xff & (ip.source()[3]);
-					address[6]= 0xff & (ip.destination()[0]);
-					address[7]= 0xff & (ip.destination()[1]);
-					address[8]= 0xff & (ip.destination()[2]);
-					address[9]= 0xff & (ip.destination()[3]);	
-					*/
-				address[0]=0xff & (ipSrcAddr.getAddress()[0]);
-				address[1]=0xff & (ipSrcAddr.getAddress()[1]);
-				address[2]=0xff & (ipSrcAddr.getAddress()[2]);
-				address[3]=0xff & (ipSrcAddr.getAddress()[3]);
-				address[6]=0xff & (ipDstAddr.getAddress()[0]);
-				address[7]=0xff & (ipDstAddr.getAddress()[1]);
-				address[8]=0xff & (ipDstAddr.getAddress()[2]);
-				address[9]=0xff & (ipDstAddr.getAddress()[3]);
-
-				    ipString=sourceIpString+"->"+destinationIpString+" ";
-			}
-			catch(Exception e){
-				System.out.println("ParsePacket error ip: "+e);
-				return;
-			}
-//			if(packet.hasHeader(tcp)){
-			if(ipv6!=null) {
-			if(ipv6.contains(TcpPacket.class)) {
-				try {
-//		    	          packet.getHeader(tcp);
-		            	tcp=(TcpPacket)(ipv6.getPayload());
-		            	TcpPacket.TcpHeader tcph=tcp.getHeader();
-		    	          try{
-//			    	            payload=tcp.getPayload();
-		    	        	  payload=tcp.getPayload();
-			    	      }
-			    	      catch(Exception e){
-//			    		        payload=new byte[]{'e','r','r','o','r'};
-			    		        System.out.println("ParsePacket get tcpPayload error: "+e);
-			    		        return;
-			    	      }
-		    	          protocol="tcp";
-		    	          /*
-		    	          sport=tcp.source();
-		    	          dport=tcp.destination();
-		  				  address[4]= 0xff & (sport>>8);
-						  address[5]= 0xff & sport;
-						  address[10]= 0xff & (dport>>8);
-						  address[11]= 0xff & dport;
-				          String flags="-";
-				          if(tcp.flags_SYN()) flags=flags+"SYN-";
-				          if(tcp.flags_ACK()) flags=flags+"ACK-";
-				          if(tcp.flags_PSH()) flags=flags+"PSH-";
-				          if(tcp.flags_FIN()) flags=flags+"FIN-";
-				          if(tcp.flags_RST()) flags=flags+"RST-";
-				          if(tcp.flags_CWR()) flags=flags+"CWR-";
-				          if(tcp.flags_URG()) flags=flags+"URG-";
-		    	          payloadString=SBUtil.showAsciiInBinary(payload);
-		    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
-		  				  states[0]=flags+" "+payloadString;
-		  				  */
-		    	          sport=tcph.getSrcPort().valueAsInt();
-		    	          dport=tcph.getDstPort().valueAsInt();
-		    	          address[4]=0xff & (sport>>8);
-		    	          address[5]=0xff & (sport);
-		    	          address[10]=0xff & (dport>>8);
-		    	          address[11]=0xff & dport;
-		    	          String flags="-";
-		    	          if(tcph.getSyn()) flags=flags+"SYN-";
-		    	          if(tcph.getAck()) flags=flags+"ACK-";
-		    	          if(tcph.getPsh()) flags=flags+"PSH-";
-		    	          if(tcph.getFin()) flags=flags+"FIN-";
-		    	          if(tcph.getRst()) flags=flags+"RST-";
-		    	          if(tcph.getUrg()) flags=flags+"URG-";
-		    	          if(payload!=null)
-		    	            try {
-		    	               payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-		    	            }
-		    	            catch(Exception e) {
-	        	               System.out.println("ParsePacket tcp error while Making payload String:"+payload.toString()+":"+e.toString());
-	                        }
-		    	          else
-		    	        	  payloadString="";
-		    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
-		    	          states[0]=flags+" "+payloadString;
-
-		            }
-		            catch(Exception e){
-		            	System.out.println("ParsePacket tcp error: "+e);
-		            	return;
-		            }
-		    }
-		    else
-//		    if(packet.hasHeader(udp)){
-		    if(ipv6.contains(UdpPacket.class)) {
-		            try{
-		            	udp=(UdpPacket)(ipv6.getPayload());
-//		    	          packet.getHeader(udp);
-		            	UdpPacket.UdpHeader udph=udp.getHeader();
-		    	          protocol="udp";
-		    	          /*
-		    	          sport=udp.source();
-		    	          dport=udp.destination();
-		    	          */
-		    	          sport=udph.getSrcPort().valueAsInt();
-		    	          dport=udph.getDstPort().valueAsInt();
-		    	    
-		  				  address[4]= 0xff & (sport>>8);
-						  address[5]= 0xff & sport;
-						  address[10]= 0xff & dport>>8;
-						  address[11]= 0xff & dport;
-						  /**/
-		    	          
-		    	          try{
-		    	              payload=udp.getPayload();
-		    	          }
-		    	          catch(Exception e){
-		    		          System.out.println("ParsePacket getUdpPayload error:"+e);
-//		    		          payload=new byte[]{'e','r','r','o','r','-','g','e','t','P','a','y','l','o','a','d'};
-		    		          return;
-		    	          }
-		    	          l4String="udp "+sport+"->"+dport+" "+SBUtil.showAsciiInBinary(payload.getRawData());
-		    	          payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-		    	          states[0]=payloadString;
-		            }
-		            catch(Exception e){
-		            	System.out.println("ParsePacket udp error: "+e);
-		            	return;
-		            }			
-		    }
-		    else
-//			  	if(packet.hasHeader(icmp)){
-			if(ipv6.contains(IcmpV6CommonPacket.class))
-			  			try{
-//			  				  packet.getHeader(icmp);
-			  				icmpv6 = (IcmpV6CommonPacket)(ipv6.getPayload());
-							  protocol ="icmpv6";
-							  address[4]= 0;
-							  address[5]= 0;
-							  address[10]= 0;
-							  address[11]= 0;
-//							  String icmpString=icmp.checksumDescription();
-							  String icmpString=icmpv6.getHeader().getCode().toString();
-							  payload=icmpv6.getPayload();
-							  try {
-								     payload=icmp.getPayload();
-							  }
-							  catch(Exception e) {
-							  }
-							  if(payload!=null) {
-							     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-							     states[0]=icmpString+" "+payloadString;
-							  }
-							  else {
-								  states[0]=icmpString+" (icmpv6- no payload)";
-							  }
-			  			}
-			  			catch(Exception e){
-			  				System.out.println("ParsePacket error icmpv6:"+e);
-			  				return;
-			  			}
-				}
-				else
-//		  	if(packet.hasHeader(icmp)){
-				if(ipv6.contains(IpV6ExtHopByHopOptionsPacket.class)) {
-		  			try{
-//		  				  packet.getHeader(icmp);
-		  				ipv6hopbyhop = (IpV6ExtHopByHopOptionsPacket)(ipv6.getPayload());
-						  protocol ="icmpv6hopbyhop";
-						  address[4]= 0;
-						  address[5]= 0;
-						  address[10]= 0;
-						  address[11]= 0;
-//						  String icmpString=icmp.checksumDescription();
-						  String icmpString=ipv6hopbyhop.getHeader().toString();
-						  payload=ipv6hopbyhop.getPayload();
-						  try {
-							     payload=icmp.getPayload();
-						  }
-						  catch(Exception e) {
-						  }
-						  if(payload!=null) {
-						     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-						     states[0]=icmpString+" "+payloadString;
-						  }
-						  else {
-							  states[0]=icmpString+" (icmpv6- no payload)";
-						  }
-		  			}
-		  			catch(Exception e){
-		  				System.out.println("ParsePacket error icmpv6:"+e);
-		  				return;
-		  			}
-			    }
-				else{
-					try{
-						  protocol ="ipv6-N/A";
-						  sport=0;
-						  dport=0;
-						  payload=ipv6.getPayload();
-						  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
-						  states[0]=payloadString;
-					}
-					catch(Exception e){
-						System.out.println("ParsePacket error ipv6-n/a: "+e);
-						return;
-					}
-			   }			
-		}
+        if(isIpV6(packet)) {}
+        else
+        if(isIcmpV6Common(packet)) {}
 		else {
 			try{
 				  protocol ="ether -N/A";
@@ -601,6 +194,7 @@ public class ParsePacket {
 				  payload=eth.getPayload();
 				  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
 				  states[0]=payloadString;
+				  protocolBit=0x080;
 			}
 			catch(Exception e){
 				System.out.println("ParsePacket error ethernet-n/a: "+e);
@@ -660,5 +254,542 @@ public class ParsePacket {
 		*/
 
 	}
+    
+    boolean isIpV4(Packet packet) {
+	   if(!packet.contains(IpV4Packet.class)) 
+		   return false;
+		try{
+//			   packet.getHeader(ip);
+			ipv4=(IpV4Packet)(packet.getPayload());
+			IpV4Packet.IpV4Header ip4h=ipv4.getHeader();
+			InetAddress ipSrcAddr= ip4h.getSrcAddr();
+//			   sourceIpString = FormatUtils.ip(ip.source());
+			sourceIpString=ipSrcAddr.toString().substring(1);
+//			   destinationIpString = FormatUtils.ip(ip.destination());
+			InetAddress ipDstAddr =ip4h.getDstAddr();
+//			destinationIpString = ip4h.getDstAddr().toString();
+			destinationIpString = ipDstAddr.toString().substring(1);
+//			System.out.printf("#%d: ip.src=%s\n", packet.getFrameNumber(), str);
+//			System.out.printf("#%d: ip.src=%s\n", n, sip);
+			/*
+				address[0]= 0xff & (ip.source()[0]);
+				address[1]= 0xff & (ip.source()[1]);
+				address[2]= 0xff & (ip.source()[2]);
+				address[3]= 0xff & (ip.source()[3]);
+				address[6]= 0xff & (ip.destination()[0]);
+				address[7]= 0xff & (ip.destination()[1]);
+				address[8]= 0xff & (ip.destination()[2]);
+				address[9]= 0xff & (ip.destination()[3]);	
+				*/
+			address[0]=0xff & (ipSrcAddr.getAddress()[0]);
+			address[1]=0xff & (ipSrcAddr.getAddress()[1]);
+			address[2]=0xff & (ipSrcAddr.getAddress()[2]);
+			address[3]=0xff & (ipSrcAddr.getAddress()[3]);
+			address[6]=0xff & (ipDstAddr.getAddress()[0]);
+			address[7]=0xff & (ipDstAddr.getAddress()[1]);
+			address[8]=0xff & (ipDstAddr.getAddress()[2]);
+			address[9]=0xff & (ipDstAddr.getAddress()[3]);
 
+			    ipString=sourceIpString+"->"+destinationIpString+" ";
+		  }
+		  catch(Exception e){
+			  System.out.println("ParsePacket error ip: "+e);
+			  return false;
+		  }
+//		if(packet.hasHeader(tcp)){
+		  if(ipv4==null) 
+			  return false;
+		  if(ipv4.contains(TcpPacket.class)) {
+			  try {
+//	    	          packet.getHeader(tcp);
+	            	tcp=(TcpPacket)(ipv4.getPayload());
+	            	TcpPacket.TcpHeader tcph=tcp.getHeader();
+	    	          try{
+//		    	            payload=tcp.getPayload();
+	    	        	  payload=tcp.getPayload();
+		    	      }
+		    	      catch(Exception e){
+//		    		        payload=new byte[]{'e','r','r','o','r'};
+		    		        System.out.println("ParsePacket get tcpPayload error: "+e);
+		    		        return true;
+		    	      }
+	    	          protocol="tcp";
+	    	          protocolBit=0x001;
+	    	          /*
+	    	          sport=tcp.source();
+	    	          dport=tcp.destination();
+	  				  address[4]= 0xff & (sport>>8);
+					  address[5]= 0xff & sport;
+					  address[10]= 0xff & (dport>>8);
+					  address[11]= 0xff & dport;
+			          String flags="-";
+			          if(tcp.flags_SYN()) flags=flags+"SYN-";
+			          if(tcp.flags_ACK()) flags=flags+"ACK-";
+			          if(tcp.flags_PSH()) flags=flags+"PSH-";
+			          if(tcp.flags_FIN()) flags=flags+"FIN-";
+			          if(tcp.flags_RST()) flags=flags+"RST-";
+			          if(tcp.flags_CWR()) flags=flags+"CWR-";
+			          if(tcp.flags_URG()) flags=flags+"URG-";
+	    	          payloadString=SBUtil.showAsciiInBinary(payload);
+	    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
+	  				  states[0]=flags+" "+payloadString;
+	  				  */
+	    	          sport=tcph.getSrcPort().valueAsInt();
+	    	          dport=tcph.getDstPort().valueAsInt();
+	    	          address[4]=0xff & (sport>>8);
+	    	          address[5]=0xff & (sport);
+	    	          address[10]=0xff & (dport>>8);
+	    	          address[11]=0xff & dport;
+	    	          String flags="-";
+	    	          if(tcph.getSyn()) flags=flags+"SYN-";
+	    	          if(tcph.getAck()) flags=flags+"ACK-";
+	    	          if(tcph.getPsh()) flags=flags+"PSH-";
+	    	          if(tcph.getFin()) flags=flags+"FIN-";
+	    	          if(tcph.getRst()) flags=flags+"RST-";
+	    	          if(tcph.getUrg()) flags=flags+"URG-";
+	    	          if(payload!=null)
+	    	            try {
+	    	               payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+	    	            }
+	    	            catch(Exception e) {
+	        	               System.out.println("ParsePacket tcp error while Making payload String:"+payload.toString()+":"+e.toString());
+	                      }
+	    	          else
+	    	        	  payloadString="";
+	    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
+	    	          states[0]=flags+" "+payloadString;
+                      return true;
+	            }
+	            catch(Exception e){
+	            	System.out.println("ParsePacket tcp error: "+e);
+	            	return false;
+	            }
+	    }
+	    else
+//	    if(packet.hasHeader(udp)){
+	    if(ipv4.contains(UdpPacket.class)) {
+		    if(ipv4.contains(IcmpV4CommonPacket.class)) {
+	  			try{
+//	  				  packet.getHeader(icmp);
+	  				icmp = (IcmpV4CommonPacket)(ipv4.getPayload());
+					  protocol ="icmp";
+					  protocolBit=0x004;
+					  address[4]= 0;
+					  address[5]= 0;
+					  address[10]= 0;
+					  address[11]= 0;
+//					  String icmpString=icmp.checksumDescription();
+					  String icmpString=icmp.getHeader().getCode().toString();
+					  try {
+					     payload=icmp.getPayload();
+					  }
+					  catch(Exception e) {
+			  				System.out.println("ParsePacket error udp-icmpv4-getpayload:"+e);
+			  				return false;							  
+					  }
+					  if(payload!=null) {
+					     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+					     states[0]=icmpString+" "+payloadString;
+					  }
+					  else {
+						  states[0]=icmpString+" (icmpv4- no payload)";
+					  }
+					  return true;
+				 }
+	  			catch(Exception e){
+	  				System.out.println("ParsePacket icmpv4-udp:"+e);
+	  				return false;
+	  			}
+		   }
+	       else {
+	            try{
+	            	udp=(UdpPacket)(ipv4.getPayload());
+//	    	          packet.getHeader(udp);
+	            	UdpPacket.UdpHeader udph=udp.getHeader();
+	    	          protocol="udp";
+	    	          protocolBit=0x002;
+	    	          /*
+	    	          sport=udp.source();
+	    	          dport=udp.destination();
+	    	          */
+	    	          sport=udph.getSrcPort().valueAsInt();
+	    	          dport=udph.getDstPort().valueAsInt();
+	    	    
+	  				  address[4]= 0xff & (sport>>8);
+					  address[5]= 0xff & sport;
+					  address[10]= 0xff & dport>>8;
+					  address[11]= 0xff & dport;
+					  /**/
+	    	          
+	    	          try{
+	    	              payload=udp.getPayload();
+	    	          }
+	    	          catch(Exception e){
+	    		          System.out.println("ParsePacket getUdpPayload error:"+e);
+//	    		          payload=new byte[]{'e','r','r','o','r','-','g','e','t','P','a','y','l','o','a','d'};
+	    		          return false;
+	    	          }
+	    	          if(payload==null) {
+		    	          l4String="udp "+sport+"->"+dport+" (no payload)";
+		    	          payloadString="(no payload)";
+		    	          states[0]=payloadString;		    	        	  
+	    	          }
+	    	          else {
+		    	          l4String="udp "+sport+"->"+dport+" "+SBUtil.showAsciiInBinary(payload.getRawData());
+		    	          payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+		    	          states[0]=payloadString;
+	    	          }
+	    	          return true;
+	            }
+	            catch(Exception e){
+	            	System.out.println("ParsePacket udp error: "+e);
+	            	return false;
+	            }
+	       }
+	    }
+	    else
+//	  	if(packet.hasHeader(icmp)){
+	    if(ipv4.contains(IcmpV4CommonPacket.class)) {
+	  			try{
+//	  				  packet.getHeader(icmp);
+	  				icmp = (IcmpV4CommonPacket)(ipv4.getPayload());
+					  protocol ="icmp";
+					  protocolBit=0x004;
+					  address[4]= 0;
+					  address[5]= 0;
+					  address[10]= 0;
+					  address[11]= 0;
+//					  String icmpString=icmp.checksumDescription();
+					  String icmpString=icmp.getHeader().getCode().toString();
+					  try {
+					     payload=icmp.getPayload();
+					  }
+					  catch(Exception e) {
+			  				System.out.println("ParsePacket error icmpv4-getpayload:"+e);
+			  				return false;						  
+					  }
+					  if(payload!=null) {
+					     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+					     states[0]=icmpString+" "+payloadString;
+					  }
+					  else {
+						  states[0]=icmpString+" (icmpv4- no payload)";
+					  }
+					  return true;
+				 }
+	  			catch(Exception e){
+	  				System.out.println("ParsePacket error icmpv4:"+e);
+	  				return false;
+	  			}
+		}
+		else{
+				try{
+					  protocol ="ip-N/A";
+					  protocolBit=0x008;
+					  sport=0;
+					  dport=0;
+					  payload=ipv4.getPayload();
+					  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+					  states[0]=payloadString;
+					  return true;
+				}
+				catch(Exception e){
+					System.out.println("ParsePacket error ip-n/a: "+e);
+					return false;
+				}
+		}			
+    }
+    
+    boolean isIpV6(Packet packet) {
+	    if(!packet.contains(IpV6Packet.class))
+		   return false;
+		try{
+//			   packet.getHeader(ip);
+			ipv6=(IpV6Packet)(packet.getPayload());
+			IpV6Packet.IpV6Header ip6h=ipv6.getHeader();
+			Inet6Address ipSrcAddr= ip6h.getSrcAddr();
+//			   sourceIpString = FormatUtils.ip(ip.source());
+			sourceIpString=ipSrcAddr.toString().substring(1);
+//			   destinationIpString = FormatUtils.ip(ip.destination());
+			Inet6Address ipDstAddr =ip6h.getDstAddr();
+//			destinationIpString = ip4h.getDstAddr().toString();
+			destinationIpString = ipDstAddr.toString().substring(1);
+//			System.out.printf("#%d: ip.src=%s\n", packet.getFrameNumber(), str);
+//			System.out.printf("#%d: ip.src=%s\n", n, sip);
+			/*
+				address[0]= 0xff & (ip.source()[0]);
+				address[1]= 0xff & (ip.source()[1]);
+				address[2]= 0xff & (ip.source()[2]);
+				address[3]= 0xff & (ip.source()[3]);
+				address[6]= 0xff & (ip.destination()[0]);
+				address[7]= 0xff & (ip.destination()[1]);
+				address[8]= 0xff & (ip.destination()[2]);
+				address[9]= 0xff & (ip.destination()[3]);	
+				*/
+			address[0]=0xff & (ipSrcAddr.getAddress()[0]);
+			address[1]=0xff & (ipSrcAddr.getAddress()[1]);
+			address[2]=0xff & (ipSrcAddr.getAddress()[14]);
+			address[3]=0xff & (ipSrcAddr.getAddress()[15]);
+			address[6]=0xff & (ipDstAddr.getAddress()[0]);
+			address[7]=0xff & (ipDstAddr.getAddress()[1]);
+			address[8]=0xff & (ipDstAddr.getAddress()[14]);
+			address[9]=0xff & (ipDstAddr.getAddress()[15]);
+
+			ipString=sourceIpString+"->"+destinationIpString+" ";
+			    
+		}
+		catch(Exception e){
+			System.out.println("ParsePacket error ipv6: "+e);
+			return false;
+		}
+//		if(packet.hasHeader(tcp)){
+		if(ipv6==null)
+			return false;
+		if(ipv6.contains(TcpPacket.class)) {
+			try {
+//	    	          packet.getHeader(tcp);
+	            	tcp=(TcpPacket)(ipv6.getPayload());
+	            	TcpPacket.TcpHeader tcph=tcp.getHeader();
+	    	          try{
+//		    	            payload=tcp.getPayload();
+	    	        	  payload=tcp.getPayload();
+		    	      }
+		    	      catch(Exception e){
+//		    		        payload=new byte[]{'e','r','r','o','r'};
+		    		        System.out.println("ParsePacket get tcpPayload error: "+e);
+		    		        return false;
+		    	      }
+	    	          protocol="tcp";
+	    	          protocolBit=0x010;
+	    	          /*
+	    	          sport=tcp.source();
+	    	          dport=tcp.destination();
+	  				  address[4]= 0xff & (sport>>8);
+					  address[5]= 0xff & sport;
+					  address[10]= 0xff & (dport>>8);
+					  address[11]= 0xff & dport;
+			          String flags="-";
+			          if(tcp.flags_SYN()) flags=flags+"SYN-";
+			          if(tcp.flags_ACK()) flags=flags+"ACK-";
+			          if(tcp.flags_PSH()) flags=flags+"PSH-";
+			          if(tcp.flags_FIN()) flags=flags+"FIN-";
+			          if(tcp.flags_RST()) flags=flags+"RST-";
+			          if(tcp.flags_CWR()) flags=flags+"CWR-";
+			          if(tcp.flags_URG()) flags=flags+"URG-";
+	    	          payloadString=SBUtil.showAsciiInBinary(payload);
+	    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
+	  				  states[0]=flags+" "+payloadString;
+	  				  */
+	    	          sport=tcph.getSrcPort().valueAsInt();
+	    	          dport=tcph.getDstPort().valueAsInt();
+	    	          address[4]=0xff & (sport>>8);
+	    	          address[5]=0xff & (sport);
+	    	          address[10]=0xff & (dport>>8);
+	    	          address[11]=0xff & dport;
+	    	          String flags="-";
+	    	          if(tcph.getSyn()) flags=flags+"SYN-";
+	    	          if(tcph.getAck()) flags=flags+"ACK-";
+	    	          if(tcph.getPsh()) flags=flags+"PSH-";
+	    	          if(tcph.getFin()) flags=flags+"FIN-";
+	    	          if(tcph.getRst()) flags=flags+"RST-";
+	    	          if(tcph.getUrg()) flags=flags+"URG-";
+	    	          if(payload!=null)
+	    	            try {
+	    	               payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+	    	            }
+	    	            catch(Exception e) {
+        	               System.out.println("ParsePacket tcp error while Making payload String:"+payload.toString()+":"+e.toString());
+                        }
+	    	          else
+	    	        	  payloadString="";
+	    	          l4String="tcp "+sport+"->"+dport+" "+flags+" "+payloadString;
+	    	          states[0]=flags+" "+payloadString;
+                      return true;
+	            }
+	            catch(Exception e){
+	            	System.out.println("ParsePacket tcp error: "+e);
+	            	return false;
+	            }
+	    }
+		else
+		if(ipv6.contains(IpV6ExtOptionsPacket.class)) {
+			
+//		  	if(packet.hasHeader(icmp)){
+				if(ipv6.contains(IpV6ExtHopByHopOptionsPacket.class)) {
+		  			try{
+//		  				  packet.getHeader(icmp);
+		  				ipv6Hopbyhop = (IpV6ExtHopByHopOptionsPacket)(ipv6.getPayload());
+						  protocol ="icmpv6hopbyhop";
+						  protocolBit=0x040;
+						  address[4]= 0;
+						  address[5]= 0;
+						  address[10]= 0;
+						  address[11]= 0;
+//						  String icmpString=icmp.checksumDescription();
+						  String icmpString=ipv6Hopbyhop.getHeader().toString();
+						  payload=ipv6Hopbyhop.getPayload();
+						  try {
+							     payload=icmp.getPayload();
+						  }
+						  catch(Exception e) {
+						  }
+						  if(payload!=null) {
+						     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+						     states[0]=icmpString+" "+payloadString;
+						  }
+						  else {
+							  states[0]=icmpString+" (icmpv6- no payload)";
+						  }
+						  return true;
+		  			}
+		  			catch(Exception e){
+		  				System.out.println("ParsePacket error IpVtExtHopByHop:"+e);
+		  				return false;
+		  			}
+			    }		
+				else
+					if(ipv6.contains(IpV6ExtDestinationOptionsPacket.class)) {
+			  			try{
+//			  				  packet.getHeader(icmp);
+			  				ipv6Destination = (IpV6ExtDestinationOptionsPacket)(ipv6.getPayload());
+							  protocol ="ipv6Destination";
+							  protocolBit=0x040;
+							  address[4]= 0;
+							  address[5]= 0;
+							  address[10]= 0;
+							  address[11]= 0;
+//							  String icmpString=icmp.checksumDescription();
+							  String icmpString=ipv6Destination.getHeader().toString();
+							  try {
+							     payload=ipv6Destination.getPayload();
+							  }
+							  catch(Exception e) {
+							  }
+							  if(payload!=null) {
+							     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+							     states[0]=icmpString+" "+payloadString;
+							  }
+							  else {
+								  states[0]=icmpString+" (ipv6Destination- no payload)";
+							  }
+							  return true;
+			  			}
+			  			catch(Exception e){
+			  				System.out.println("ParsePacket error IpVtExtDestination:"+e);
+			  				return false;
+			  			}
+				    }
+					else {
+						try{
+							  protocol ="ipv6-extOption-N/A";
+							  protocolBit=0x040;
+							  sport=0;
+							  dport=0;
+							  payload=ipv6.getPayload();
+							  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+							  states[0]=payloadString;
+							  return true;
+						}
+						catch(Exception e){
+							System.out.println("ParsePacket error ipv6-extOption-n/a: "+e);
+							return false;
+						}
+						
+					}
+				}
+	    else
+//	    if(packet.hasHeader(udp)){
+	    if(ipv6.contains(UdpPacket.class)) {
+	            try{
+	            	udp=(UdpPacket)(ipv6.getPayload());
+//	    	          packet.getHeader(udp);
+	            	UdpPacket.UdpHeader udph=udp.getHeader();
+	    	          protocol="udp";
+	    	          protocolBit=0x020;
+	    	          /*
+	    	          sport=udp.source();
+	    	          dport=udp.destination();
+	    	          */
+	    	          sport=udph.getSrcPort().valueAsInt();
+	    	          dport=udph.getDstPort().valueAsInt();
+	    	    
+	  				  address[4]= 0xff & (sport>>8);
+					  address[5]= 0xff & sport;
+					  address[10]= 0xff & dport>>8;
+					  address[11]= 0xff & dport;
+					  /**/
+	    	          
+	    	          try{
+	    	              payload=udp.getPayload();
+	    	          }
+	    	          catch(Exception e){
+	    		          System.out.println("ParsePacket getUdpPayload error:"+e);
+//	    		          payload=new byte[]{'e','r','r','o','r','-','g','e','t','P','a','y','l','o','a','d'};
+	    		          return false;
+	    	          }
+	    	          l4String="udp "+sport+"->"+dport+" "+SBUtil.showAsciiInBinary(payload.getRawData());
+	    	          payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+	    	          states[0]=payloadString;
+	    	          return true;
+	              }
+	              catch(Exception e){
+	            	  System.out.println("ParsePacket ipv6 udp error: "+e);
+	            	  return false;
+	              }
+	    }
+
+			else{
+				try{
+					  protocol ="ipv6-N/A";
+					  protocolBit=0x080;
+					  sport=0;
+					  dport=0;
+					  payload=ipv6.getPayload();
+					  payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+					  states[0]=payloadString;
+					  return true;
+				}
+				catch(Exception e){
+					System.out.println("ParsePacket error ipv6-n/a: "+e);
+					return false;
+				}
+		   }
+    }
+    
+    boolean isIcmpV6Common(Packet packet) {
+//	  	if(packet.hasHeader(icmp)){
+	    if(!packet.contains(IcmpV6CommonPacket.class)) 
+		return false;
+	  			try{
+//	  				  packet.getHeader(icmp);
+	  				icmpV6Common = (IcmpV6CommonPacket)(ipv6.getPayload());
+					  protocol ="icmpv6";
+					  protocolBit=0x040;
+					  address[4]= 0;
+					  address[5]= 0;
+					  address[10]= 0;
+					  address[11]= 0;
+//					  String icmpString=icmp.checksumDescription();
+					  String icmpString=icmpV6Common.getHeader().getCode().toString();
+					  payload=icmpV6Common.getPayload();
+					  try {
+						     payload=icmpV6Common.getPayload();
+					  }
+					  catch(Exception e) {
+					  }
+					  if(payload!=null) {
+					     payloadString=SBUtil.showAsciiInBinary(payload.getRawData());
+					     states[0]=icmpString+" "+payloadString;
+					  }
+					  else {
+						  states[0]=icmpString+" (icmpv6- no payload)";
+					  }
+					  return true;
+	  			}
+	  			catch(Exception e){
+	  				System.out.println("ParsePacket error icmpv6CommonPacket:"+e);
+	  				return false;
+	  			}
+	}
+      
 }
