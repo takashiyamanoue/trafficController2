@@ -111,7 +111,7 @@ public class ControlledTextArea extends javax.swing.JTextArea
 //            System.out.println(sx);
         }
 
-        // Unicode ‚ð S-JIS Code ‚É•ÏŠ·
+        // Unicode ?¿½?¿½ S-JIS Code ?¿½É•ÏŠï¿½
 //	    byte[]  sjisCode = JavaStringToShiftJISString.convertAll( sx.toCharArray());
 //        String rtn=new String(sjisCode,0);
         String rtn="\""+sx+"\"";

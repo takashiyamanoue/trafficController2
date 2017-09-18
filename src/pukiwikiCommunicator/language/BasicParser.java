@@ -1,59 +1,21 @@
 package pukiwikiCommunicator.language;
-import javax.swing.JTextArea;
+
+/*
+An interpreter of Basic like programming language.
+
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue/researches/java/Basic/
+
+  by T. Yamanoue, May.1999
+  yamanoue@isc.kyutech.ac.jp
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue
+
+*/
+import java.awt.*;
+
+//import android.widget.EditText;
+
 public class BasicParser extends Parser
 {
-    public boolean parseWhile(LispObject x)
-    {
-        /*
-        while <relop> <statement>
-
-        is translated into
-
-        (while <relop>  (progn <slist>))
-
-        */
-
-        boolean dmy;
-        LispObject w;
-
-        if(!(is("while")||is("WHILE"))) return false;
-
-        dmy=rB();
-        ListCell relop=new ListCell(); relop.d=ALisp.nilSymbol;
-        if(!parseRelational(relop))
-        { putErrorMessage("Syntax Error at relational operation of WHILE statement.");
-          return false;}
-
-        dmy=rB();
-        ListCell s1= new ListCell(); s1.d=ALisp.nilSymbol;
-        if(!parseStatement(s1))
-        { putErrorMessage("Syntax Error at the statement after relational ex. of WHILE statement.");
-          return false;}
-        dmy=rB();
-
-        w=lisp.cons(lisp.car(lisp.car(s1)),lisp.nilSymbol);
-        w=lisp.cons(lisp.car(relop),w);
-        w=lisp.cons(lisp.recSymbol("while"),w);
-        ((ListCell)x).a=w;
-        return true;
-    }
-
-    public boolean parseCall(LispObject x)
-    {
-        ListCell type=new ListCell(); type.d=ALisp.nilSymbol;
-        if(is("=")||is("call")||is("CALL")||is("gosub")||is("GOSUB")){
-            if(!parseExpression(x,type)) {
-                putErrorMessage("Syntax Error at statement list of call/gosub statement.");
-                return false;
-            }
-            else{
-//                ((ListCell)x).a= lisp.cdr(lisp.car(x));       
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean parseGraphicsPset(LispObject x)
     {
        /*
@@ -106,7 +68,7 @@ public class BasicParser extends Parser
         boolean dmy;
         dmy=rB();
         ListCell type=new ListCell();
-        type.d=ALisp.nilSymbol;
+        type.d=lisp.nilSymbol;
            if(!is("(")) {
 //               putErrorMessage("( is expected at a coordinate of LINE statement.");
                   return false;
@@ -125,8 +87,8 @@ public class BasicParser extends Parser
     }
     public void putErrorMessage(String x)
     {
-        message.append(x+"\n");
-        message.repaint();
+        message.parseCommand("println "+x);
+//        message.repaint();
     }
     public boolean parseGraphicsLine(LispObject x)
     {
@@ -221,28 +183,27 @@ public class BasicParser extends Parser
     {
         boolean dmy;
         LispObject progn=lisp.nilSymbol;
+        while(true){
             ListCell x=new ListCell();
             x.d=lisp.nilSymbol;
             x.a=lisp.nilSymbol;
             if(parseStatement(x)){
+                String px=lisp.print.print(x);
+                if(lisp.gui.isTracing()){
+                    lisp.gui.parseCommand("guiMessage "+x);
+                }
                 progn=lisp.nconc(progn,lisp.car(x));
                 dmy=rB();
             }
-            else return false;
-        while(true){
-            dmy=is(":")||is(";");
-            dmy=rB();
-            x=new ListCell();
-            x.d=lisp.nilSymbol;
-            x.a=lisp.nilSymbol;
-            if(parseStatement(x)){
-                progn=lisp.nconc(progn,lisp.car(x));
+            else if(is(":")||is(";")){}
+            else
+            {
+                lisp.rplca(slist,progn);
+                return true;
             }
-            else break;
-        }
         dmy=rB();
-        lisp.rplca(slist,progn);
-        return true;
+        dmy=is(":"); dmy=is(";");
+        }
     }
 
     public boolean parseFor(LispObject x)
@@ -309,15 +270,13 @@ public class BasicParser extends Parser
 
         }
 
-        dmy=rB();
-        dmy=is(":")||is(";");
-        dmy=rB();
         ListCell slist=new ListCell(); slist.d=lisp.nilSymbol;
 
         if(!parseStatementList(slist)) {
             putErrorMessage("Syntax Error at statement list between FOR and NEXT loop.");
             return false;
         }
+
         LispObject sl=lisp.cons(lisp.recSymbol("progn"), slist.a);
         dmy=rB();
         if(!(is("next")||is("NEXT"))) {
@@ -347,11 +306,9 @@ public class BasicParser extends Parser
         if( !parseIf2(x)){
               if(!parseBlock(x)){
                  if(!super.parseExpression(x,type)) return false;
-                 else return true;
               }
-              else return true;
         }
-        else return true;
+        return true;
     }
     public boolean parseDefDim(LispObject x)
     {
@@ -360,32 +317,64 @@ public class BasicParser extends Parser
         dmy=rB();
         if(!(is("dim")||is("DIM"))) return false;
         dmy=rB();
-        ListCell name=new ListCell(); name.d=ALisp.nilSymbol;
-        ListCell type=new ListCell(); type.d=ALisp.nilSymbol;
+        ListCell name=new ListCell(); name.d=lisp.nilSymbol;
+        ListCell type=new ListCell(); type.d=lisp.nilSymbol;
         if(!isName(name,type)) {
             putErrorMessage("Syntax Error at DIM statement.");
             return false;
         }
 
-        w=ALisp.cons(((ListCell)name).a,ALisp.nilSymbol);
-        w=ALisp.cons(lisp.recSymbol("defdim"),w);
+        w=lisp.cons(((ListCell)name).a,lisp.nilSymbol);
+        w=lisp.cons(lisp.recSymbol("defdim"),w);
         ((ListCell)x).a=w;
 
-        if(!is("("))   {
+        if(is("("))   {
 //            putErrorMessage("Syntax Error at DIM statement.");
-            return true;
+           dmy=rB();
+           ListCell varl=new ListCell(); varl.d=lisp.nilSymbol; varl.a=lisp.nilSymbol;
+           if(!parseVarList(varl)) {
+               putErrorMessage("Syntax Error at DIM statement.");
+               return false;
+           }
+           dmy=rB();
+           if(!is(")")) {
+               putErrorMessage("Syntax Error at DIM statement.");
+               return false;
+           }
         }
         dmy=rB();
-        ListCell varl=new ListCell(); varl.d=lisp.nilSymbol; varl.a=lisp.nilSymbol;
-        if(!parseVarList(varl)) {
-            putErrorMessage("Syntax Error at DIM statement.");
-            return false;
-        }
-        dmy=rB();
-        if(!is(")")) {
-            putErrorMessage("Syntax Error at DIM statement.");
-            return false;
-        }
+        while(is(",")) {
+           dmy=rB();
+           ListCell y=new ListCell();
+           y.d=lisp.nilSymbol;
+           name=new ListCell(); name.d=lisp.nilSymbol;
+           type=new ListCell(); type.d=lisp.nilSymbol;
+           if(!isName(name,type)) {
+               putErrorMessage("Syntax Error at DIM statement.");
+               return false;
+           }
+
+           w=lisp.cons(((ListCell)name).a,lisp.nilSymbol);
+           w=lisp.cons(lisp.recSymbol("defdim"),w);
+           ((ListCell)y).a=w;
+
+           if(is("("))   {
+//            putErrorMessage("Syntax Error at DIM statement.");
+              dmy=rB();
+              ListCell varl=new ListCell(); varl.d=lisp.nilSymbol; varl.a=lisp.nilSymbol;
+              if(!parseVarList(varl)) {
+                  putErrorMessage("Syntax Error at DIM statement.");
+                  return false;
+              }
+              dmy=rB();
+              if(!is(")")) {
+                  putErrorMessage("Syntax Error at DIM statement.");
+                  return false;
+              }
+           }
+           lisp.nconc(x,y);
+           dmy=rB();           
+        }        
         return true;
 
     }
@@ -440,12 +429,15 @@ public class BasicParser extends Parser
     public BasicParser()
     {
     }
+    public BasicParser(ABasic basic, InterpreterInterface iif){
+    	super(basic,iif);
+    }
     public boolean parseBlock(LispObject block)
     {
         boolean dmy;
-        LispObject progn=ALisp.nilSymbol;
+        LispObject progn=lisp.nilSymbol;
         ListCell x=new ListCell();
-        ((ListCell)x).a=ALisp.nilSymbol; ((ListCell)x).d=ALisp.nilSymbol;
+        ((ListCell)x).a=lisp.nilSymbol; ((ListCell)x).d=lisp.nilSymbol;
         if(is("{")) {
            dmy=rB();
            if(!parseStatementList(x)) {
@@ -472,8 +464,8 @@ public class BasicParser extends Parser
            }
         }
         else return false;
-        ((ListCell)block).a=ALisp.cons(
-                   lisp.recSymbol("progn"),ALisp.car(x));
+        ((ListCell)block).a=lisp.cons(
+                   lisp.recSymbol("progn"),lisp.car(x));
         return true;
     }
     public boolean parseRelOp(LispObject x)
@@ -575,13 +567,12 @@ public class BasicParser extends Parser
         if(parseReturn(y,type)) {((ListCell)x).a=y;return true;}
         if(parseIf(y))          {((ListCell)x).a=y;return true;}
         if(parseFor(y))         {((ListCell)x).a=y;return true;}
-        if(parseWhile(y))       {((ListCell)x).a=y;return true;}
         if(parsePrint(y))       {((ListCell)x).a=y;return true;}
         if(parseBlock(y))       {((ListCell)x).a=y;return true;}
         if(parseGraphicsLine(y))        {((ListCell)x).a=y;return true;}
         if(parseGraphicsPset(y))        {((ListCell)x).a=y;return true;}
         if(parseAssign(y)) {((ListCell)x).a=y;return true;}
-        if(parseCall(y)) {((ListCell)x).a=y;return true;}
+        if(parseExpression(y,type))  {((ListCell)x).a=y; return true;}
         return false;
     }
     public boolean parseVarList(LispObject w)
@@ -710,11 +701,6 @@ public class BasicParser extends Parser
         if(parseBasic2(functions)) return functions;
         return lisp.nilSymbol;
     }
-    public BasicParser(ALisp l,JTextArea m)
-    {
-        lisp=l;
-        nameTable=lisp.nilSymbol;
-        message=m;
-    }
+
 }
 

@@ -531,12 +531,12 @@ public class LoadFileFrame extends ControlledFrame implements DialogListener, Ed
 	}
 
 	public String getFilePath() {
-		// TODO 自動生成されたメソッド・スタブ
+		// TODO ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ黷ｽ?ｿｽ?ｿｽ?ｿｽ\?ｿｽb?ｿｽh?ｿｽE?ｿｽX?ｿｽ^?ｿｽu
 		return null;
 	}
 
 	public String getFileName() {
-		// TODO 自動生成されたメソッド・スタブ
+		// TODO ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ黷ｽ?ｿｽ?ｿｽ?ｿｽ\?ｿｽb?ｿｽh?ｿｽE?ｿｽX?ｿｽ^?ｿｽu
 		return null;
 	}
 }

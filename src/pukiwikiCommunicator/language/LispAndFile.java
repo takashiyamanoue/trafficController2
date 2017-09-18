@@ -16,7 +16,8 @@ import pukiwikiCommunicator.controlledparts.FrameWithLanguageProcessor;
 
 public class LispAndFile extends ALisp
 {
-    public void init(JTextArea rarea, JTextArea parea,CQueue iq, FrameWithLanguageProcessor g)
+//    public void init(JTextArea rarea, JTextArea parea,CQueue iq, FrameWithLanguageProcessor g)
+	public void init(JTextArea rarea, JTextArea parea, CQueue iq, InterpreterInterface g)
     {
          me=null;
          inqueue=iq;
@@ -28,8 +29,9 @@ public class LispAndFile extends ALisp
         initFunctionDispatcher();
     //    inqueue=iq;
     //    outqueue=oq;
-        readArea=rarea;
-        printArea=parea;
+//        readArea=rarea;
+        readArea=rarea.getText();
+//        printArea=parea;
 
         read=new ReadS(inqueue,this);
         print=new PrintSforSaveEnvironment(this);

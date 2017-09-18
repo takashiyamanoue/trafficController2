@@ -1,18 +1,21 @@
 package pukiwikiCommunicator.language;
-import java.util.Hashtable;
+
+import java.lang.*;
+import java.util.*;
 public class PrintS extends java.lang.Object
 {
     public void printString(LispObject s)
     {
-        out=out+((MyString)s).val;
+//        out=out+((MyString)s).val;
+    	out.append(((MyString)s).val);
     }
     public String print(LispObject s)
     {
-        out=""; printS(s); return out;
+        out=new StringBuffer(""); printS(s); return out.toString();
     }
     public void pCh(char c)
     {
-        out=out+c;
+        out.append(c);
     }
     public void printList(LispObject s)
     {
@@ -30,39 +33,32 @@ public class PrintS extends java.lang.Object
     }
     public void printNumber(LispObject s)
     {
-        int nt=((MyNumber)s).ntype;
-        /*
-        if(s.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(s.getClass().getName().equals("MyInt")){
+    	if(s.isKind("myint")){
             printInt(s); return;
         }
-        /*
-        if(s.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(s.getClass().getName().equals("MyDouble")){
+    	if(s.isKind("mydouble")){
             printDouble(s); return;
         }
-        /*
-        if(s.getClass().getName().equals("MyString")){
-        */
-        if(nt==1){
+//        if(s.getClass().getName().equals("MyString")){
+    	if(s.isKind("mystring")){
             printString(s); return;
         }
-        out=out+((MyNumber)s).val;
+        out.append(((MyNumber)s).val);
     }
     public void printInt(LispObject s)
     {
-        out=out+((MyInt)s).val;
+        out.append(((MyInt)s).val);
     }
     public void printDouble(LispObject s)
     {
-        out=out+((MyDouble)s).val;
+        out.append(((MyDouble)s).val);
     }
     public void printSymbol(LispObject s)
     {
-        out=out+((Symbol)(lisp.symbolTable.get(
-             new Integer(((Symbol)s).hc)))).name;
+        out.append(((Symbol)(lisp.symbolTable.get(
+             new Integer(((Symbol)s).hc)))).name);
     }
     public void printAtom(LispObject s)
     {
@@ -71,7 +67,7 @@ public class PrintS extends java.lang.Object
         printSymbol(s);
     }
     public ALisp lisp;
-    public String out;
+    public StringBuffer out;
     public void printS(LispObject s)
     {
         if(lisp.atom(s)) printAtom(s);
@@ -80,7 +76,9 @@ public class PrintS extends java.lang.Object
     public Hashtable symbolTable;
     public PrintS(ALisp lsp)
     {
+    	out=new StringBuffer("");
         lisp=lsp;
     }
 }
+
 

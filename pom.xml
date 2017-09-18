@@ -27,5 +27,11 @@
       <artifactId>pcap4j-packetfactory-static</artifactId>
       <version>1.7.1</version>
     </dependency>
+    <dependency>
+    	<groupId>org.twitter4j</groupId>
+    	<artifactId>twitter4j-core</artifactId>
+    	<version>4.0.4</version>
+    </dependency>
+    
   </dependencies>
 </project>

@@ -83,7 +83,7 @@ public class ControlledEditPane extends javax.swing.JEditorPane
                 new BufferedImage(100,100,
                     BufferedImage.TYPE_INT_ARGB);
            Graphics2D g2d = image.createGraphics();
- // ‚±‚±‚ð’Ç‰Á
+ // ?¿½?¿½?¿½?¿½?¿½?¿½Ç‰ï¿½
            g2d.setClip(0, 0, image.getWidth(this), image.getHeight(this));
  //          g.translate(100,100);
  //          t.draw((Graphics2D)g);

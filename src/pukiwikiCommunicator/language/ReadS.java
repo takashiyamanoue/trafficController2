@@ -116,29 +116,47 @@ public class ReadS extends java.lang.Object
         double r,rx;
         s=1; n=0;
         if(rCh('-')) s=-1;
-        clearName();
-        if(!rNum()) return false;
-        while(rNum());
-        try{ n=Integer.parseInt(name);}
-        catch(NumberFormatException e){}
-        if(!rCh('.')){
-           x=new MyInt(s*n);
+
+        int x1=in.prevRead1();  // hex?
+        int x2=in.prevRead2();  // hex?
+        if(x1==(int)'0' &&  x2==(int)'x') {  //hex?
+         	in.rNext();
+        	in.rNext();
+        	clearName();
+            if(!rHex()) return false;
+            while(rHex());
+            n=hexStr2i(name);
+            if(!rCh('.')){
+                x=new MyInt(s*n);
+                return true;
+             }            
+        }
+        else{
+           clearName();
+           if(!rNum()) return false;
+           while(rNum());
+           try{ n=Integer.parseInt(name);}
+           catch(NumberFormatException e){}
+           if(!rCh('.')){
+              x=new MyInt(s*n);
+              return true;
+           }
+           r=(double)n;
+           rx=0.1;
+           clearName();
+           while(rNum()){
+              int p;
+              p=0;
+              try{p=Integer.parseInt(name);}
+              catch(NumberFormatException e){}
+              r=r+p*rx;
+              rx=rx*0.1;
+              clearName();
+           }
+           x=new MyDouble(s*r);
            return true;
         }
-        r=(double)n;
-        rx=0.1;
-        clearName();
-        while(rNum()){
-            int p;
-            p=0;
-            try{p=Integer.parseInt(name);}
-            catch(NumberFormatException e){}
-            r=r+p*rx;
-            rx=rx*0.1;
-            clearName();
-        }
-        x=new MyDouble(s*r);
-        return true;
+        return false;
     }
     public boolean rB()
     {
@@ -169,6 +187,9 @@ public class ReadS extends java.lang.Object
         while(rA()||rNum()||rCh('-')){
             dmy();
         }
+        if(name.equals("line")){
+        	System.out.println(name);
+        }
         x=lisp.recSymbol(name);
         return true;
 
@@ -181,6 +202,42 @@ public class ReadS extends java.lang.Object
             return true;
         }
         return false;
+    }
+    public boolean rHex()
+    {
+         int x=in.prevRead1();
+        if((int)'0'<=x && x<=(int)'9') {
+            conc(x); in.rNext();
+            return true;
+        }
+        if((int)'A'<=x && x<=(int)'F') {
+            conc(x); in.rNext();
+            return true;
+        }
+        if((int)'a'<=x && x<=(int)'f') {
+            conc(x); in.rNext();
+            return true;
+        }
+        
+        return false;
+    }
+    public int hexStr2i(String x){
+    	int rtn=0;
+    	int p=0;
+    	while(p<x.length()){
+    		char c=x.charAt(p);
+    		if((int)'0'<=c && c<=(int)'9'){
+    			rtn=rtn*16+((int)c-'0');
+    		}
+    		if((int)'a'<=c && c<=(int)'f'){
+    			rtn=rtn*16+((int)c-'a'+10);
+    		}
+    		if((int)'A'<=c && c<=(int)'F'){
+    			rtn=rtn*16+((int)c-'A'+10);
+    		}
+    		p++;
+    	}
+    	return rtn;
     }
     public boolean rCh(char c)
     {

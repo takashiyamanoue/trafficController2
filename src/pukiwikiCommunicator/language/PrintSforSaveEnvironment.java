@@ -50,7 +50,7 @@ public class PrintSforSaveEnvironment extends PrintS
     {
         String x=((MyString)s).val;
         String w=strConst(x);
-        out=out+w;
+        out.append(w);
     }
 
 	public PrintSforSaveEnvironment(ALisp lsp)

@@ -1,17 +1,26 @@
 package pukiwikiCommunicator.language;
-import java.util.Hashtable;
 
-import javax.swing.JTextArea;
-import pukiwikiCommunicator.controlledparts.FrameWithLanguageProcessor;
+/*
+An interpreter of Basic like programming language.
+
+Lisp interpreter. of the interpreter.
+
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue/researches/java/Basic/
+
+  by T. Yamanoue, May.1999
+  yamanoue@isc.kyutech.ac.jp
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue
+
+*/
+import java.util.*;
+
+//import android.os.Message;
+//import android.widget.EditText;
 public class ALisp extends java.lang.Object implements Runnable
 {
-    public LispObject applyGraphicsOperation(LispObject proc, LispObject argl)
-    {
-        return null;
-    }
-
     public Symbol sym_m_neg;
     public Symbol sym_setq;
+    public Symbol sym_int;
     public void initFunctionDispatcher()
     {
          functionDispatcher=new Hashtable();
@@ -51,6 +60,13 @@ public class ALisp extends java.lang.Object implements Runnable
          functionDispatcher.put(sym_m_exp, new Fun_m_exp(this));
          functionDispatcher.put(sym_m_mod, new Fun_m_mod(this));
          functionDispatcher.put(sym_m_neg, new Fun_m_neg(this));
+         functionDispatcher.put(sym_m_int, new Fun_m_int(this));
+         
+         functionDispatcher.put(sym_m_band, new Fun_m_band(this));
+         functionDispatcher.put(sym_m_bor, new Fun_m_bor(this));
+         functionDispatcher.put(sym_m_bxor, new Fun_m_bxor(this));
+         functionDispatcher.put(sym_m_bnot, new Fun_m_bnot(this));
+         
     }
     public Hashtable functionDispatcher;
     public void initSymbols()
@@ -66,6 +82,10 @@ public class ALisp extends java.lang.Object implements Runnable
         sym_list   =recSymbol("list");
         sym_setq   =recSymbol("setq");
         sym_m_add  =recSymbol("+");
+        sym_m_band  =recSymbol("&");
+        sym_m_bor  =recSymbol("|");
+        sym_m_bxor  =recSymbol("bxor");
+        sym_m_bnot  =recSymbol("!");        
         sym_m_atan =recSymbol("atan");
         sym_m_cos  =recSymbol("cos");
         sym_m_div  =recSymbol("/");
@@ -91,6 +111,7 @@ public class ALisp extends java.lang.Object implements Runnable
         sym_read   =recSymbol("read");
         sym_rest   =recSymbol("rest");
         sym_reverse=recSymbol("reverse");
+        sym_m_int  =recSymbol("int");
     }
     public Symbol sym_m_lambda;
     public Symbol sym_m_mod;
@@ -112,6 +133,11 @@ public class ALisp extends java.lang.Object implements Runnable
     public Symbol sym_m_mul;
     public Symbol sym_m_sub;
     public Symbol sym_m_add;
+    public Symbol sym_m_band;
+    public Symbol sym_m_bor;
+    public Symbol sym_m_bxor;
+    public Symbol sym_m_bnot;
+    public Symbol sym_m_int;
     public Symbol sym_list;
     public Symbol sym_reverse;
     public Symbol sym_append;
@@ -126,7 +152,7 @@ public class ALisp extends java.lang.Object implements Runnable
     public Symbol sym_car;
     public Symbol sym_read;
     public Symbol sym_print;
-    public static LispObject fifth(LispObject x)
+    public LispObject fifth(LispObject x)
     {
         return car(cdr(cdr(cdr(cdr(x)))));
     }
@@ -138,7 +164,6 @@ public class ALisp extends java.lang.Object implements Runnable
                             LispObject proc,
                             LispObject argl,
                             LispObject env)
-    throws Exception
     {
                LispObject f;
                f=get(proc, recSymbol("lambda"));
@@ -156,11 +181,7 @@ public class ALisp extends java.lang.Object implements Runnable
    }
 
     public LispObject defExt(LispObject s, LispObject env)
-    throws Exception
     {
-        if(s==null) {
-            throw new Exception("null");
-        }
         return nilSymbol;
     }
     public LispObject applyMiscOperation(LispObject proc,
@@ -169,18 +190,12 @@ public class ALisp extends java.lang.Object implements Runnable
         return null;
     }
     public LispObject progn(LispObject proc, LispObject env)
-    throws Exception
     {
         LispObject rtn=nilSymbol;
 //        LispObject thisEnv=cons(env,nilSymol);
         ((ListCell)env).d=cons(nilSymbol,nilSymbol);
         LispObject ps=proc;
         while(!Null(ps)){
-            try{
-                Thread.sleep(1);
-            }
-            catch(InterruptedException e){
-            }
             rtn=eval(car(ps),env);
             if(eq(second((ListCell)env),tSymbol)) return rtn;
             ps=cdr(ps);
@@ -199,11 +214,7 @@ public class ALisp extends java.lang.Object implements Runnable
         return x;
     }
     public LispObject evalMiscForm(LispObject form, LispObject env)
-    throws Exception
     {
-             if(form==null){
-                throw new Exception("no form");
-             }
              LispObject fform=car(form);
              return null;
     }
@@ -212,147 +223,12 @@ public class ALisp extends java.lang.Object implements Runnable
         return null;
     }
     public LispObject applyNumericalOperation(LispObject proc, LispObject argl)
-    /*
-       This method is not used now.
-    */
     {
-        /*
-            if(eq(proc,sym_m_add)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y;
-                LispObject p=cdr(argl);
-                while(!Null(p)){
-                   y=(MyNumber)(car(p));
-                   p=cdr(p);
-                   x=x.add(y);
-                }
-                return x;
-            }
-
-            if(eq(proc,sym_m_sub)){
-                MyNumber x=(MyNumber)(car(argl));
-                LispObject p=cdr(argl);
-                if(Null(p)) return (new MyNumber(0)).sub(x);
-                MyNumber y=(MyNumber)(car(p));
-                return x.sub(y);
-            }
-            if(eq(proc,sym_m_mul)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y;
-                LispObject p=cdr(argl);
-                while(!Null(p)){
-                   y=(MyNumber)(car(p));
-                   p=cdr(p);
-                   x=x.mul(y);
-                }
-                return x;
-            }
-            if(eq(proc,sym_m_div)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                return x.div(y);
-            }
-            if(eq(proc,sym_m_exp2)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                return x.exp(y);
-            }
-
-            if(eq(proc,sym_m_eq)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.eq(y)) return tSymbol;
-                else     return nilSymbol;
-            }
-            if(eq(proc,sym_m_gt)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.gt(y))  return tSymbol;
-                else     return nilSymbol;
-            }
-            if(eq(proc,sym_m_lt)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.lt(y))  return tSymbol;
-                else     return nilSymbol;
-            }
-            if(eq(proc,sym_m_ge)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.ge(y))  return tSymbol;
-                else     return nilSymbol;
-            }
-            if(eq(proc,sym_m_le)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.le(y))  return tSymbol;
-                else     return nilSymbol;
-            }
-            if(eq(proc,sym_m_ne)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                if(x.ne(y))  return tSymbol;
-                else     return nilSymbol;
-            }
-
-            if(eq(proc,sym_m_sin)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.sin();
-            }
-            if(eq(proc,sym_m_cos)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.cos();
-            }
-             if(eq(proc,sym_m_tan)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.tan();
-            }
-             if(eq(proc,sym_m_atan)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.sin();
-            }
-            if(eq(proc,sym_m_sqrt)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.sin();
-            }
-            if(eq(proc,sym_m_log)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.sin();
-            }
-             if(eq(proc,sym_m_exp)){
-                MyNumber x=(MyNumber)(car(argl));
-                return x.sin();
-            }
-            if(eq(proc,sym_m_mod)){
-                MyNumber x=(MyNumber)(car(argl));
-                MyNumber y=(MyNumber)(second(argl));
-                return x.mod(y);
-            }
-            */
            return null;
     }
     public LispObject applyListOperation(LispObject proc,
                                          LispObject argl)
-    /*
-       This method is not used now.
-    */
     {
-        /*
-            if(eq(proc,sym_car)||
-               eq(proc,sym_first))
-                return car(car(argl));
-            if(eq(proc,sym_cdr)||
-               eq(proc,sym_rest))
-                return cdr(car(argl));
-            if(eq(proc,sym_cons))
-                return cons(car(argl),second(argl));
-            if(eq(proc,sym_atom))
-                return atom2(car(argl));
-            if(eq(proc,sym_null))
-                return Null2(car(argl));
-            if(eq(proc,sym_eq))
-                return eq2(car(argl),second(argl));
-                */
             PrimitiveFunction f=(PrimitiveFunction)(functionDispatcher.get(proc));
             if(f!=null) return f.fun(proc,argl);
             if(eq(proc,sym_equal))
@@ -381,14 +257,11 @@ public class ALisp extends java.lang.Object implements Runnable
     }
     public void stop()
     {
-        if(me!=null){ 
-            // me.stop(); 
-            me=null;
-        }
+        if(me!=null){ me.stop(); me=null;}
     }
     public void start()
     {
-        if(me==null){me=new Thread(this,"language"); me.start();}
+        if(me==null){me=new Thread(this); me.start();}
     }
     public void run()
     {
@@ -397,46 +270,47 @@ public class ALisp extends java.lang.Object implements Runnable
               while(!inqueue.isEmpty()){
                LispObject s=read.read(inqueue);
                if(s!=null){
-                try{
                  LispObject r=preEval(s,environment);
           //   LispObject r=eval(s,environment);
                  String o=print.print(r);
-                 printArea.append(o+"\n");
-                }
-                catch(Exception e){
-                    printArea.append("exception "+e);
-                    return;
-                }
+//                 printArea.append(o+"\n");
+                 printMessage(o+"\n");
                }
-               printArea.repaint();
+//               printArea.repaint();
              }
             }
-            try{ Thread.sleep(100);}
+            try{ me.sleep(100);}
             catch(InterruptedException e){System.out.println(e);}
         }
 //        stop();
     }
     public void rplcd(LispObject x, LispObject y)
     {
-        if(atom(x)) { printArea.append("rplcd failed\n"); return;}
+        if(atom(x)) { 
+        	//printArea.append("rplcd failed\n");
+        	printMessage("rplcd failed\n");
+        	return;
+        	}
         ((ListCell)x).d=y;
         return;
 
    }
     public void rplca(LispObject x, LispObject y)
     {
-        if(atom(x)) { printArea.append("rplca failed\n"); return;}
+        if(atom(x)) { 
+//        	printArea.append("rplca failed\n"); 
+        	
+        	return;
+        }
         ((ListCell)x).a=y;
         return;
 
     }
     public LispObject setf(LispObject form, LispObject val)
-    throws Exception
     {
         return setf(form,val,environment);
     }
     public LispObject setf(LispObject form, LispObject val, LispObject env)
-    throws Exception
     {
         ((ListCell)env).a=setfx(form,val,((ListCell)env).a);
         return form;
@@ -466,14 +340,13 @@ public class ALisp extends java.lang.Object implements Runnable
         }
     }
 
-    public FrameWithLanguageProcessor gui;
+    public InterpreterInterface gui;
     public LispObject atom2(LispObject s)
     {
         if(atom(s)) return tSymbol;
         else        return nilSymbol;
     }
     public LispObject evalcond(LispObject cond, LispObject env)
-    throws Exception
     {
         while(true){
             if(Null(cond)) return nilSymbol;
@@ -491,7 +364,6 @@ public class ALisp extends java.lang.Object implements Runnable
     }
 
     public LispObject caseOfDefun(LispObject f, LispObject env)
-    throws Exception
     {
 
         LispObject fn=cons(recSymbol("get"),
@@ -545,34 +417,49 @@ public class ALisp extends java.lang.Object implements Runnable
         return false;
     }
     public synchronized LispObject preEval(LispObject s, LispObject env)
-    throws Exception
     {
-    	try{
         LispObject rtn;
         if(isSetf(s)) {
-            environment=caseOfSetf(cdr(s),env);
-            return second(car(environment));
+        	try{
+                environment=caseOfSetf(cdr(s),env);
+                return second(car(environment));
+        	}
+        	catch(Exception e){
+        		gui.parseCommand("error at isSetf, println "+e.toString());
+        		plist("s=",s);
+        		Thread.dumpStack();        		
+        		return nilSymbol;
+        	}
         }
         else
         if(isDefun(s)){
+        	try{
             environment=caseOfDefun(cdr(s),env);
             return second(s);
+        	}
+        	catch(Exception e){
+        		gui.parseCommand("error at isDeFun, println "+e.toString());
+        		plist("s=",s);
+        		Thread.dumpStack();        		
+        		return nilSymbol;        		
+        	}
         }
         else
         {
+        	try{
             rtn=defExt(s,env);
             if(!Null(rtn)) return rtn;
             else  return eval(s,env);
+        	}
+        	catch(Exception e){
+        		gui.parseCommand("error at defEXt, println "+e.toString());
+        		plist("s=",s);
+        		Thread.dumpStack();        		
+        		return nilSymbol;
+        	}
         }
-    	}
-    	catch(Exception e){
-    		System.out.println(e.toString());
-    		Thread.dumpStack();
-    		throw e;
-    	}
     }
     public LispObject caseOfSetf(LispObject form, LispObject env)
-    throws Exception
     {
         while(true){
           if(Null(form)) return env;
@@ -592,7 +479,6 @@ public class ALisp extends java.lang.Object implements Runnable
         else return false;
     }
     public LispObject setfx(LispObject form, LispObject value, LispObject env)
-    throws Exception
     {
         LispObject key=null;
         if(symbolp(form)){
@@ -612,88 +498,75 @@ public class ALisp extends java.lang.Object implements Runnable
     }
     public LispObject eq2(LispObject x, LispObject y)
     {
+    	if(x==y) return tSymbol;
+    	if(x==null) return nilSymbol;
+    	if(y==null) return nilSymbol;
         if(eq(x,y)) return tSymbol;
         else        return nilSymbol;
     }
     public void plist(String s, LispObject x)
     {
 
-          String a=s;
+          String a=""+s;
           String o=print.print(x);
-          if(printArea==null) return;
-          printArea.append(a+o+"\n");
-          printArea.repaint();
+          if(o.equals("&")){
+        	  System.out.println("break");
+          }
 
+          gui.parseCommand("println "+a+o); 
    }
-    public void plist2(String s, LispObject x)
-    {
 
-          String a=s;
-          String o=print.print(x);
-          System.out.println(a+" "+o+"\n");
-
-   }
     public boolean symbolp(LispObject s)
     {
-        /*
-        if(s.getClass().getName().equals("ListCell"))
-        */
-        if(s.ltype==0) 
+//        if(s.getClass().getName().equals("ListCell"))
+    	if(!s.isAtom())
              return false;
-        /*
-        if(s.getClass().getName().equals("Symbol"))
-        */
-        int at=((Atom)s).atype;
-        if(at==0)
+//        if(s.getClass().getName().equals("Symbol"))
+    	if(s.isKind("symbol"))
              return true;
         else return false;
    }
-    public static LispObject Null2(LispObject s)
+    public LispObject Null2(LispObject s)
     {
         if(Null(s)) return tSymbol;
         else return nilSymbol;
     }
-    
-    public void setResult(String x){
-    	
-    }
     public LispObject apply(LispObject proc,
                             LispObject argl,
                             LispObject env)
-    throws Exception
     {
         LispObject f=null;
         LispObject rtn=null;
-        if(gui.traceFlagIsOn()){ //gui.traceFlag.isSelected()
+        if(gui.isTracing()){
            plist("apply-",proc);
            plist("argl-",argl);
         }
         if(symbolp(proc)){
-
-            // apply premitive functions
+            // apply list operation
+//            LispObject rtn=applyListOperation(proc,argl);
+//            if(rtn!=null) return rtn;
               PrimitiveFunction fx=(PrimitiveFunction)(functionDispatcher.get(proc));
               if(fx!=null) return fx.fun(proc,argl);
-            // apply list operation
+
             // apply numerical operation
+//            rtn=applyNumericalOperation(proc,argl);
+//            if(rtn!=null) return rtn;
 
             // apply misc operation
             rtn=applyMiscOperation(proc,argl);
             if(rtn!=null) return rtn;
 
-            // apply graphics operation
-            rtn=applyGraphicsOperation(proc,argl);
-            if(rtn!=null) return rtn;
-
             if(eq(proc,recSymbol("print"))){
                 LispObject p=argl;
-                String o="";
                 while(!Null(p)){
-                    o=print.print(car(p));
-                    printArea.append(o+"\n");
-                    printArea.repaint();
+                    String o=print.print(car(p));
+//                    printArea.append(o+"\n");
+//                    Message m=new Message();
+//                    m.obj=o+"\n";
+                    gui.parseCommand("println "+o);
+//                    printArea.repaint();
                     p=cdr(p);
                 }
-                this.setResult(o);
                 return car(argl);
             }
             if(eq(proc,recSymbol("read"))){
@@ -715,20 +588,18 @@ public class ALisp extends java.lang.Object implements Runnable
             return rtn;
         }
     }
-
     public LispObject evalArgl(LispObject argl, LispObject env)
-    throws Exception
     {
         if(Null(argl)) return nilSymbol;
         LispObject y=evalArgl(cdr(argl),env);
         LispObject x=eval(car(argl),env);
         return cons(x,y);
     }
-    public static LispObject fourth(LispObject x)
+    public LispObject fourth(LispObject x)
     {
         return car(cdr(cdr(cdr(x))));
     }
-    public static LispObject third(LispObject x)
+    public LispObject third(LispObject x)
     {
         return car(cdr(cdr(x)));
     }
@@ -741,33 +612,16 @@ public class ALisp extends java.lang.Object implements Runnable
           l=cdr(l);
         }
     }
-    public static LispObject second(LispObject x)
+    public LispObject second(LispObject x)
     {
         return car(cdr(x));
     }
     public LispObject eval(LispObject form, LispObject env)
-    throws java.lang.Exception 
     {
         LispObject rtn;
-        
-        if(gui!=null){
-            /*
-            try{
-                Thread.sleep(1);
-            }
-            catch(InterruptedException e){
-            }
-            */
-            if(gui.traceFlagIsOn())
-                     plist("eval..",form);
-            if(gui.stopFlagIsOn()){
-                  plist("stopped at evaluating ",form);
-                  throw new java.lang.Exception("stop") ;
-            }
-//            plist("env...",env);
-        }
+        if(gui.isTracing())
+                 plist("eval..",form);
         if(atom(form)){
-        	/*
             if(numberp(form)) rtn= form;
             else
             if(eq(tSymbol,form)) rtn= tSymbol;
@@ -790,8 +644,6 @@ public class ALisp extends java.lang.Object implements Runnable
                //
                rtn= second(w);
             }
-            */
-        	rtn=this.evalAtomForm(form,env);
         }
         else{
             LispObject fform=car(form);
@@ -835,65 +687,18 @@ public class ALisp extends java.lang.Object implements Runnable
                             evalArgl(cdr(form),env),env);
             }
         }
-        if(gui.traceFlagIsOn()) //gui.traceFlag.isSelected()
+        if(gui.isTracing())
            plist("eval return ...",rtn);
         return rtn;
 
     }
-    public LispObject evalAtomForm(LispObject form, LispObject env){
-    	LispObject rtn=null;
-        if(numberp(form)) rtn= form;
-        else
-        if(eq(tSymbol,form)) rtn= tSymbol;
-        else
-        if(eq(nilSymbol,form)) rtn= nilSymbol;
-        else{
-           LispObject w=assoc(form,((ListCell)env).a);
-           if(Null(w)){
-             plist("can not find out ",form);
-             return nilSymbol;
-           }
-           /*
-           if(!atom(second(w))){
-              rtn=nilSymbol;
-              if(eq(recSymbol("dimension"),car(second(w)))){
-                 rtn= form;
-              }
-           }
-           else
-           */
-           rtn= second(w);
-        }    	
-        return rtn;
-    }
     public void evals(CQueue iq)
     {
         inqueue=iq;
-        /*
-        if(me==null){
-          inqueue=iq;
-          me=new Thread(this);
-          me.start();
-        }
-        else{
-
-        }
-        */
-        /*
-        while(!inqueue.isEmpty()){
-          LispObject s=read.read(inqueue);
-          LispObject r=preEval(s,environment);
-       //   LispObject r=eval(s,environment);
-          String o=print.print(r);
-          printArea.appendText(o+"\n");
-          printArea.repaint();
-        }
-        */
    }
-//    public JTextArea printArea;
-    public JTextArea printArea;
-    public JTextArea readArea;
-    public void init(JTextArea rarea, JTextArea parea,CQueue iq, FrameWithLanguageProcessor g)
+//    public EditText printArea;
+    public String readArea;
+    public void init(String rarea, CQueue iq,InterpreterInterface g)
     {
          me=null;
          inqueue=iq;
@@ -906,8 +711,6 @@ public class ALisp extends java.lang.Object implements Runnable
     //    inqueue=iq;
     //    outqueue=oq;
         readArea=rarea;
-        printArea=parea;
-
         read=new ReadS(inqueue,this);
         print=new PrintS(this);
         gui=g;
@@ -915,9 +718,8 @@ public class ALisp extends java.lang.Object implements Runnable
     public ALisp()
     {
     }
-    public static boolean eq(LispObject x, LispObject y)
+    public boolean eq(LispObject x, LispObject y)
     {
-    	
         if(x==y) return true;
         if(!atom(x)) return false;
         if(!atom(y)) return false;
@@ -925,84 +727,71 @@ public class ALisp extends java.lang.Object implements Runnable
             if(numberp(y))
                return ((MyNumber)x).eq((MyNumber)y);}
         if(numberp(y)) return false;
-        if(x.getClass().equals(y.getClass())){
-           return((Symbol)x).hc == ((Symbol)y).hc;
-        }
-        else return false;
+        return((Symbol)x).hc == ((Symbol)y).hc;
     }
     public Thread me;
-    public static Symbol tSymbol;
-    public static Symbol nilSymbol;
+    public Symbol tSymbol;
+    public Symbol nilSymbol;
     public PrintS print;
     public ReadS read;
     public CQueue inqueue;
-    public ALisp(JTextArea in, JTextArea out,CQueue iq, FrameWithLanguageProcessor g)
+    public ALisp(String in, CQueue iq, InterpreterInterface g)
     {
-        init(in,out,iq,g);
+        init(in,iq,g);
     }
-    public static boolean numberp(LispObject s)
+    public boolean numberp(LispObject s)
     {
-        if(s.ltype==0) return false;
-        int at=((Atom)s).atype;
-        if(at==0) return false;
-        /*
-        if(s.getClass().getName().equals("ListCell"))
+//        if(s.getClass().getName().equals("ListCell"))
+    	if(!s.isAtom())
              return false;
-        if(s.getClass().getName().equals("MyNumber"))
+//        if(s.getClass().getName().equals("MyNumber"))
+    	if(s.isKind("mynumber"))
              return true;
-        if(s.getClass().getName().equals("MyInt"))
+//        if(s.getClass().getName().equals("MyInt"))
+    	if(s.isKind("myint"))
             return true;
-        if(s.getClass().getName().equals("MyDouble"))
+//        if(s.getClass().getName().equals("MyDouble"))
+    	if(s.isKind("mydouble"))
              return true;
-        if(s.getClass().getName().equals("MyString"))
+//        if(s.getClass().getName().equals("MyString"))
+    	if(s.isKind("mystring"))
              return true;
         else return false;
-        */
-        return true;
     }
-    public static LispObject cons(LispObject x, LispObject y)
+    public LispObject cons(LispObject x, LispObject y)
     {
         ListCell z=new ListCell();
         z.a=x; z.d=y;
         return z;
     }
-    public static boolean Null(LispObject s)
+    public boolean Null(LispObject s)
     {
         if(!atom(s)) return false;
         if(s==nilSymbol) return true;
-        try{
-          if(eq(nilSymbol,s)) return true;
-        }
-        catch(java.lang.ClassCastException e){
-            System.out.println("exception:"+e);
-        }
+        if(eq(nilSymbol,s)) return true;
         return false;
     }
-    public static boolean atom(LispObject s)
+    public boolean atom(LispObject s)
     {
-        /*
+    	/*
         if(s.getClass().getName().equals("ListCell"))
            return false;
         else return true;
         */
-        return s.ltype==1;
+    	return s.isAtom();
     }
-    public static LispObject cdr(LispObject s)
+    public LispObject cdr(LispObject s)
     {
-        /*
-        if(s.getClass().getName().equals("ListCell"))
-        */
-        if(s.ltype==0)
+//        if(s.getClass().getName().equals("ListCell"))
+    	if(!s.isAtom())
             return ((ListCell)s).d;
         else{  System.out.println("error");}
         return null;
     }
-    public static LispObject car(LispObject s)
+    public LispObject car(LispObject s)
     {
-        /*
-        if(s.getClass().getName().equals("ListCell"))
-        */
-        if(s.ltype==0)
+//        if(s.getClass().getName().equals("ListCell"))
+    	if(!s.isAtom())
             return ((ListCell)s).a;
         else{  System.out.println("error");}
         return null;
@@ -1019,5 +808,16 @@ public class ALisp extends java.lang.Object implements Runnable
     }
     public LispObject environment;
     public Hashtable symbolTable;
+    public void output(String x){
+        gui.parseCommand("println "+x);
+    }
+    public void printMessage(String x){
+        gui.parseCommand("guiMessage "+x);
+    }
+    
 }
+
+
+
+
 

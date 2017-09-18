@@ -1,33 +1,20 @@
 package pukiwikiCommunicator.language;
-import java.awt.Color;
-import javax.swing.JTextArea;
-import pukiwikiCommunicator.controlledparts.FrameWithLanguageProcessor;
-public class ABasic extends ALisp implements Runnable
+
+/*
+An interpreter of Basic like programming language.
+
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue/researches/java/Basic/
+
+  by T. Yamanoue, May.1999
+  yamanoue@isc.kyutech.ac.jp
+  http://www.tobata.isc.kyutech.ac.jp/~yamanoue
+
+*/
+import java.awt.*;
+import java.util.*;
+//import android.widget.*;
+public class ABasic extends ALisp
 {
- 
-    public LispObject evalWhile(LispObject form, LispObject env)
-    throws java.lang.Exception
-    {
-        LispObject rtn=null;
-
-        LispObject relop;
-        LispObject slist;
-        relop   =second(form);
-        slist   =third(form);
-
-           while(!Null(eval(relop,env))){
-                  rtn=eval(slist,env);
-           }
-        return rtn;
-    }
-
-
-
-    public Color colors[]=new Color[8];
-
-    public int previousY;
-    public int previousX;
-
     public void clearEnvironment()
     {
         super.clearEnvironment();
@@ -35,28 +22,29 @@ public class ABasic extends ALisp implements Runnable
     }
     public LispObject printLine(LispObject x)
     {
-    	String line="";
         LispObject s=x;
         String o;
         while(!atom(s)){
             o=print.print(car(s));
-            line=line+o;
-            printArea.append(o);
+//            printArea.append(o);
+            output(o);
             s=((ListCell)s).d;
-            if(!atom(s)) printArea.append(",");
+            if(!atom(s)) //printArea.append(",");
+            	output(",");
         }
         if(!Null(s)){
-            printArea.append(".");
+//            printArea.append(".");
+        	output(".");
             o=print.print(s);
-            printArea.append(o);
+//            printArea.append(o);
+            output(o);
         }
-        this.setResult(line);
-        printArea.append("\n");
-        printArea.repaint();
+//        printArea.append("\n");
+        output("\n");
+//        printArea.repaint();
         return x;
     }
     public LispObject evalFor(LispObject form, LispObject env)
-    throws Exception
     {
         LispObject rtn;
 
@@ -104,7 +92,6 @@ public class ABasic extends ALisp implements Runnable
     public LispObject applyUserDefined(LispObject proc,
                             LispObject argl,
                             LispObject env)
-    throws Exception
     {
                LispObject f;
                f=get(proc, recSymbol("lambda"));
@@ -131,7 +118,6 @@ public class ABasic extends ALisp implements Runnable
                return apply( f,argl,env);
     }
     public LispObject caseOfDefDim(LispObject f, LispObject env)
-    throws Exception
     {
         LispObject x=setf(car(f),cons(recSymbol("dimension"),
                                  cons(car(f),nilSymbol)));
@@ -144,7 +130,6 @@ public class ABasic extends ALisp implements Runnable
         return false;
     }
     public LispObject defExt(LispObject s, LispObject env)
-    throws Exception
     {
         if(isDefDim(s)){
             environment=caseOfDefDim(cdr(s),env);
@@ -153,16 +138,24 @@ public class ABasic extends ALisp implements Runnable
         return nilSymbol;
     }
     public synchronized void evalList(LispObject x)
-    throws Exception
     {
-        while(!Null(x)){
-            LispObject s=car(x);
-            LispObject r=preEval(s,environment); //eval the S expression
-            x=cdr(x);
-        }
-        printArea.append("OK\n");
-        printArea.setCaretPosition(printArea.getText().length());
-        printArea.repaint();
+		LispObject s=null;
+		LispObject r=null;    	
+    	try{
+            while(!Null(x)){
+               s=car(x);
+               r=preEval(s,environment); //eval the S expression
+               x=cdr(x);
+            }
+//        printArea.append("OK\n");
+            printMessage("OK\n");
+//        printArea.requestFocus();
+    	}
+    	catch(Exception e){
+    		gui.parseCommand("println "+e.toString());
+    		plist("s=",s);
+    		Thread.dumpStack();
+    	}
     }
     public BasicParser basicparser;
     public void parseCommands(LispObject x)
@@ -180,7 +173,8 @@ public class ABasic extends ALisp implements Runnable
         if(eq(car(x),recSymbol("list"))||
            eq(car(x),recSymbol("LIST"))){
               str=sourceManager.printTheSource();
-              printArea.append(str);
+//              printArea.append(str);
+              printMessage(str);
               return;
         }
         if(eq(car(x),recSymbol("run"))||
@@ -190,12 +184,10 @@ public class ABasic extends ALisp implements Runnable
 //              printArea.appendText(str);
               LispObject p=basicparser.parseBasic(o);
               str=print.print(p);
-              printArea.append(str);
-              try{
+//              printArea.append(str);
+//              printMessage(str);
               evalList(p);
-              }
-              catch(Exception e){}
-              printArea.repaint();
+//              printArea.repaint();
               return;
         }
         else {
@@ -204,15 +196,12 @@ public class ABasic extends ALisp implements Runnable
             LispObject t=basicparser.parseBasic(x);
 //            str=print.print(t);
 //            printArea.appendText(str);
-            try{
-              evalList(t);
-            }
-            catch(Exception e){}
-            printArea.repaint();
+            evalList(t);
+//            printArea.repaint();
         }
     }
-    SourceManager sourceManager;
-    LispObject sourceProgram;
+    public SourceManager sourceManager;
+    public LispObject sourceProgram;
     public void comment()
     {
         /*
@@ -282,11 +271,6 @@ public class ABasic extends ALisp implements Runnable
               (for <var> <expression> <expression> <expression>
                           <block>)
 
-        <while>::='while' <relationalexpression> <statement>
-        
-        this is translated into
-              (while <relationalexpression> <statement>)
-
         <block>::=<statement>|<statementList>
         <statementList>::='['<statement>{(';'|<lf>)<statement>}']'
 
@@ -327,42 +311,12 @@ public class ABasic extends ALisp implements Runnable
         */
     }
     public LispObject evalMiscForm(LispObject form, LispObject env)
-    throws Exception
     {
             LispObject fform=car(form);
             if(eq(fform,recSymbol("for"))){
                 return evalFor(form,env);
             }
-            if(eq(fform,recSymbol("while"))){
-                return evalWhile(form,env);
-            }
             return null;
-    }
-    public LispObject evalAtomForm(LispObject form, LispObject env){
-    	LispObject rtn=null;
-        if(numberp(form)) rtn= form;
-        else
-        if(eq(tSymbol,form)) rtn= tSymbol;
-        else
-        if(eq(nilSymbol,form)) rtn= nilSymbol;
-        else{
-           LispObject w=assoc(form,((ListCell)env).a);
-           if(Null(w)){
-             plist("can not find out ",form);
-             return nilSymbol;
-           }
-           //
-           if(!atom(second(w))){
-              rtn=nilSymbol;
-              if(eq(recSymbol("dimension"),car(second(w)))){
-                 rtn= form;
-              }
-           }
-           else
-           //
-           rtn= second(w);
-        }    	
-        return rtn;
     }
     public LispObject applyMiscOperation(LispObject proc,LispObject argl)
     {
@@ -395,11 +349,17 @@ public class ABasic extends ALisp implements Runnable
 
         */
              if(eq(proc,recSymbol("aget"))){
-                String aname=print.print(car(argl));
-                String index=print.print(second(argl));
-                LispObject val= arrays.get(aname,index);
-                if(val==null) return nilSymbol;
-                return val;
+            	 try{
+                    String aname=print.print(car(argl));
+                    String index=print.print(second(argl));
+                    LispObject val= arrays.get(aname,index);
+                    if(val==null) return nilSymbol;
+                    return val;
+            	 }
+            	 catch(Exception e){
+            		 plist("aget error...argl=", argl);
+            		return nilSymbol; 
+            	 }
             }
 
         /*
@@ -407,7 +367,27 @@ public class ABasic extends ALisp implements Runnable
              if(eq(proc,recSymbol("printl"))){
                 return printLine(argl);
              }
-             
+             if(eq(proc,recSymbol("line"))){
+                LispObject x=cons(proc,argl);
+//                gui.graphicArea.add(x);
+//                gui.graphicArea.repaint();
+                return x;
+
+             }
+             if(eq(proc,recSymbol("lineto"))){
+                LispObject x=cons(proc,argl);
+//                gui.graphicArea.add(x);
+//                gui.graphicsArea.repaint();
+                return x;
+
+             }
+              if(eq(proc,recSymbol("pset"))){
+                LispObject x=cons(proc,argl);
+//                gui.graphicArea.add(x);
+//                gui.graphicsArea.repaint();
+                return x;
+
+             }
       return null;
     }
     public ArrayManager arrays;
@@ -432,11 +412,8 @@ public class ABasic extends ALisp implements Runnable
                                     "circle","CIRCLE",
                                     "true",  "TRUE",
                                     "nil",   "NIL",
-                                    "pset",  "PSET",
-                                    "call",  "CALL",
-                                    "gosub", "GOSUB",
-                                    "while", "WHILE"};
-    public Parser parser;
+                                    "pset",  "PSET"};
+//    public Parser parser;
     public String breakSymbols[]=
           {" ", "+", "-", "*", "/", "=", "(", ")",
            ",", ".", ":", "?", "^", ";", "$", "#",
@@ -445,48 +422,26 @@ public class ABasic extends ALisp implements Runnable
     public ABasic()
     {
     }
-    public ABasic(JTextArea in, JTextArea out,CQueue iq,FrameWithLanguageProcessor g)
+    public ABasic(String in, CQueue iq,InterpreterInterface g)
     {
-        init(in,out,iq,g);
+        init(in,iq,g);
     }
 
 
-    public void init(JTextArea rarea, JTextArea parea,CQueue iq,FrameWithLanguageProcessor g)
+    public void init(String rarea, CQueue iq, InterpreterInterface g)
     {
-        /*
-         me=null;
-         inqueue=iq;
-        symbolTable=new Hashtable();
-        nilSymbol  = recSymbol("nil");
-        environment=cons(nilSymbol,nilSymbol);
-        tSymbol    = recSymbol("true");
-        initSymbols();
-        initFunctionDispatcher();
-    //    inqueue=iq;
-    //    outqueue=oq;
-        readArea=rarea;
-        printArea=parea;
-        */
-        super.init(rarea,parea,iq,g);
+        super.init(rarea,iq,g);
 
         read=(ReadS)(new ReadLine(inqueue,this));
         ((ReadLine)read).setBreak(breakSymbols,29);
-        ((ReadLine)read).setReserve(reservedWords,50);
+        ((ReadLine)read).setReserve(reservedWords,44);
         print=new PrintS(this);
         gui=g;
-        parser=new Parser(this,parea);
+//        parser=new Parser(this,gui);
 //        parser.setReserveSymbols(reserveSymbols,2);
         arrays=new ArrayManager();
         sourceManager=new SourceManager(this);
-        basicparser=new BasicParser(this,parea);
-        colors[0]=Color.black;
-        colors[1]=Color.blue;
-        colors[2]=Color.red;
-        colors[3]=Color.magenta;
-        colors[4]=Color.green;
-        colors[5]=Color.cyan;
-        colors[6]=Color.yellow;
-        colors[7]=Color.white;
+        basicparser=new BasicParser(this,gui);
     }
     public void run()
     {
@@ -496,38 +451,22 @@ public class ABasic extends ALisp implements Runnable
             if(inqueue!=null){
 //                printArea.appendText("OK\n");
               while(!inqueue.isEmpty()){
-//               while(true){
-//                  printArea.appendText("OK\n");
-//                  if(inqueue.isEmpty()) break;
-//                printArea.appendText("OK\n");
                LispObject s=((ReadLine)read).readLine(inqueue); //input the line
-//               LispObject s=((ReadS)read).read(inqueue);
                if(s!=null){
-//                  LispObject r=preEval(s,environment);
-//                  LispObject r=eval(s,environment);
-//                 String o=print.print(s);
-//                 printArea.appendText(o+"\n");
-//                 LispObject t=parser.parseLine(s);  // translate the line into S expression.
-//                 o=print.print(t);
-//                 printArea.appendText(o+"\n");
-//                 LispObject r=eval(t,environment);
-//                 LispObject r=preEval(t,environment); //eval the S expression
                    parseCommands(s);
-//                 o=print.print(r);
-//                 printArea.appendText(o+'\n');
                }
-               printArea.repaint();
-//               printArea.appendText("OK\n");
+
+//               printArea.repaint();
 
              }
 
             }
 
-            try{ Thread.sleep(100);}
+            try{ me.sleep(50);}
             catch(InterruptedException e){System.out.println(e);}
         }
 
-//        stop();
     }
 }
+
 

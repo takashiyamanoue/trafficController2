@@ -39,6 +39,17 @@ public class CQueue extends java.lang.Object
 
 //        }
     }
+    public synchronized int getAuxW2()
+    {
+        int c;
+//        while(true){
+            waitNext();
+            c=getAux2();
+            if(c!=-1) return c;
+            else return -1;
+
+//        }
+    }
     public int getNW()
     {
         if(charBuffer==0) charBuffer=getAux();
@@ -91,6 +102,12 @@ public class CQueue extends java.lang.Object
         if(charBuffer==0) charBuffer=getAuxW();
         return charBuffer;
     }
+    public int prevRead2()
+    {
+    	int dmy=prevRead1();
+        return getAuxW2();
+    }
+    
     public synchronized int getAux()
     {
        // System.out.println("getAux()...");
@@ -107,6 +124,22 @@ public class CQueue extends java.lang.Object
         }
 
     }
+    public int getAux2()
+    {
+       // System.out.println("getAux()...");
+        if(tail==null){
+            head=null; tail=null;
+            return -1;
+        }
+        else
+        {
+            int rtn=tail.c;
+    //        System.out.println("getAux-"+rtn+"-");
+            return rtn;
+        }
+
+    }
+    
     public synchronized void put(int c)
     {
         CList p=new CList();

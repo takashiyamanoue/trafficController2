@@ -1,4 +1,5 @@
 package pukiwikiCommunicator.language;
+
 public class Fun_m_add implements PrimitiveFunction
 {
     public ALisp lisp;
@@ -12,13 +13,6 @@ public class Fun_m_add implements PrimitiveFunction
                 MyNumber y;
                 LispObject p=lisp.cdr(argl);
                 while(!lisp.Null(p)){
-                    
-                    if(x==null){
-                        lisp.printArea.append(
-                        "type conversion error occured while adding.\n");
-                        return null;
-                    }
-                    
                    y=(MyNumber)(lisp.car(p));
                    p=lisp.cdr(p);
                    x=x.add(y);

@@ -23,11 +23,14 @@ public class ReadLine extends ReadS
         char c=(char)(in.prevRead1());
         int cx=(int)c;
         while(true){
-            if(c=='\\') {
+//            if(c=='\\'||c=='¥') {
+        	if(c=='\\') {
                 dmy=in.get();
                 c=(char)(in.prevRead1());
-                dmy=in.get();
                 buff=buff+c;
+                dmy=in.get();
+                c=(char)(in.prevRead1());                
+                cx=(int)c;
             }
             else if(c=='"'){
                 dmy=in.get();
@@ -68,6 +71,9 @@ public class ReadLine extends ReadS
                  readEOL();
              }
              LispObject line=readLine();
+             if(lisp.gui.isTracing()){
+                  lisp.plist("",line);
+             }
              rtn=lisp.nconc(rtn,line);
            }
         }

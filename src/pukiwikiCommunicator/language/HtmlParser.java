@@ -359,7 +359,7 @@ public class HtmlParser extends java.lang.Object
     	   this.pointerToStack=0;
         }
         LispObject rtn=(LispObject)(this.objectStack.elementAt(0));
-        lisp.plist2("parse..",rtn);
+//        lisp.plist2("parse..",rtn);
         return rtn;
     }
         

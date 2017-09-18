@@ -658,19 +658,19 @@ public class JFileDialog extends javax.swing.JFrame
 		} catch (java.lang.Exception e) {
 		}
 	}
-	/* (非 Javadoc)
+	/* (?ｿｽ?ｿｽ Javadoc)
 	 * @see controlledparts.FrameWithControlledTextAreas#keyIsReleasedAtTextArea(int, int)
 	 */
 	public void keyIsReleasedAtTextArea(int id, int p, int code) {
-		// TODO 自動生成されたメソッド・スタブ
+		// TODO ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ黷ｽ?ｿｽ?ｿｽ?ｿｽ\?ｿｽb?ｿｽh?ｿｽE?ｿｽX?ｿｽ^?ｿｽu
 
 	}
 
-	/* (非 Javadoc)
+	/* (?ｿｽ?ｿｽ Javadoc)
 	 * @see controlledparts.FrameWithControlledTextAreas#releaseKey(int, int)
 	 */
 	public void releaseKey(int i, int p, int code) {
-		// TODO 自動生成されたメソッド・スタブ
+		// TODO ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ?ｿｽ黷ｽ?ｿｽ?ｿｽ?ｿｽ\?ｿｽb?ｿｽh?ｿｽE?ｿｽX?ｿｽ^?ｿｽu
 		ControlledTextArea t=(ControlledTextArea)(texts.elementAt(i));
 		t.releaseKey(p, code);
 

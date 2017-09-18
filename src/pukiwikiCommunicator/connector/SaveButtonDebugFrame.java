@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.Timer;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -21,8 +22,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import pukiwikiCommunicator.language.HtmlTokenizer;
-
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -31,21 +30,20 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import pukiwikiCommunicator.language.HtmlTokenizer;
+import pukiwikiCommunicator.language.InterpreterInterface;
+import pukiwikiCommunicator.language.Util;
+
+//import android.widget.EditText;
+
+import pukiwikiCommunicator.connector.AuthDialogListener;
 
 
 /**
-* This code was edited or generated using CloudGarden's Jigloo
-* SWT/Swing GUI Builder, which is free for non-commercial
-* use. If Jigloo is being used commercially (ie, by a corporation,
-* company or business for any purpose whatever) then you
-* should purchase a license for each developer using Jigloo.
-* Please visit www.cloudgarden.com for details.
-* Use of Jigloo implies acceptance of these licensing terms.
-* A COMMERCIAL LICENSE HAS NOT BEEN PURCHASED FOR
-* THIS MACHINE, SO JIGLOO OR THIS CODE CANNOT BE USED
-* LEGALLY FOR ANY CORPORATE OR COMMERCIAL PURPOSE.
+
 */
-public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
+public class SaveButtonDebugFrame extends JFrame 
+implements AuthDialogListener, InterpreterInterface
 {
 	private JButton saveButton;
 	private String baseUrl;
@@ -58,6 +56,7 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
     private static final int AUTH_MODE_NOT_PREEMPTIVE = 1;
     private static final int AUTH_MODE_CONSOLE = 2;
     private Properties setting;
+    private static final long timeOutTime=10000;
 
 	private void initGUI() {
 		try {
@@ -201,6 +200,11 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		this.editPageButtonActionPerformed(null);
 		this.replaceTextWith(x);
 	}
+	public void saveText(String url,String x){
+		this.setPageOfTheURL(url);
+		this.editPageButtonActionPerformed(null);
+		this.replaceTextWith(x);
+	}
 	
 	private JButton clearButton;
 	private JTextArea messageTextArea;
@@ -249,6 +253,9 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		this.println("url="+url);
 		connectToURL(url);
 	}
+	
+    static int status=0;
+    static HttpMethod method=null;
 	private String connectToURL(String url) {
 		this.println("connectButton.actionPerformed, url="+url);
 		//TODO add your code for connectButton.actionPerformed
@@ -270,7 +277,7 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 			if(registeredUrl.equals(urlWithoutParameters)){
 				this.println("registeredUrl == urlWithoutParameters");
 				client.getParams().setAuthenticationPreemptive(true);
-			    // �ｿｽF�ｿｽﾘ擾ｿｽ�ｿｽ(�ｿｽ�ｿｽ�ｿｽ[�ｿｽU�ｿｽ�ｿｽ�ｿｽﾆパ�ｿｽX�ｿｽ�ｿｽ�ｿｽ[�ｿｽh)�ｿｽﾌ作成.
+			    // �F�؏��(���[�U���ƃp�X���[�h)�̍쐬.
 				String uname=authDialog.getID();
 				char[] pwd=authDialog.getPassword();
 				String pwdx=new String(pwd);
@@ -279,9 +286,9 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
     	        this.setting.setProperty(authUrl,idPass);
 //			    Credentials defaultcreds1 = new UsernamePasswordCredentials(uname, pwdx);
 				Credentials defaultcreds1 = new UsernamePasswordCredentials(idPass);
-			    // �ｿｽF�ｿｽﾘのス�ｿｽR�ｿｽ[�ｿｽv.
+			    // �F�؂̃X�R�[�v.
 			    AuthScope scope1 = new AuthScope(null, -1, null);
-			    // �ｿｽX�ｿｽR�ｿｽ[�ｿｽv�ｿｽﾆ認�ｿｽﾘ擾ｿｽ�ｿｽﾌ組�ｿｽ�ｿｽ�ｿｽ�ｿｽ�ｿｽ�ｿｽ�ｿｽZ�ｿｽb�ｿｽg.
+			    // �X�R�[�v�ƔF�؏��̑g�������Z�b�g.
 			    client.getState().setCredentials(scope1, defaultcreds1);				
 			}
 			else{
@@ -292,7 +299,7 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		}
 		try{
 			this.println("new getMethiod("+url+")");
-    		HttpMethod method = new GetMethod(url);
+    		method = new GetMethod(url);
 //    		method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER,
 //					new DefaultHttpMethodRetryHandler(3, false));
     		if(this.authDialog!=null){
@@ -300,73 +307,90 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
     		}
 
 //	    	method.getParams().setContentCharset("UTF-8");
-			int status=client.executeMethod(method);
+    		status=0;
+   			try{
+			   Thread thread = new Thread(new Runnable(){
+//				   @Override
+				   public void run(){   		
+    		          try{
+    				     status=client.executeMethod(method);
+    		          }
+    		          catch(Exception e){
+    			        System.out.println("connect error."+e);
+    		         }
+				  } //run
+			   }); //  time schedule
+			   thread.start();
+			   long endTimeMillis = System.currentTimeMillis()+timeOutTime;
+			   while(thread.isAlive()){
+				   if(System.currentTimeMillis()>endTimeMillis){
+					   this.println("getMethod connection time out.");
+					   method.abort();
+					   return null; // return by the time out
+				   }
+				   try{
+					   Thread.sleep(100);
+				   }
+				   catch(InterruptedException e){}
+			   }
+   			}
+    		catch(Exception e){
+    			this.println(e.toString()+"\n");
+    			return null;
+    		}
 		    if (status != HttpStatus.SC_OK) {
-		          this.println("Method failed: " + method.getStatusLine());
-		          if((method.getStatusLine()).toString().indexOf("401")>=0){
-		        	  this.authDialog=new AuthDialog(this);
-		        	  this.authInputFlag=false;
-		        	  urlWithoutParameters=getUrlWithoutParameters(url);
-		        	  this.authDialog.setProperty("auth-url", urlWithoutParameters);
-		        	  this.println("before waitUntilMessageIsReturned");
-//		        	  this.authDialog.start();
-		        	  this.authDialog.setVisible(true);
-		        	  if(this.setting!=null){
-			        	  urlWithoutParameters=getUrlWithoutParameters(url);
-		        	      String authUrl="basicAuth-"+urlWithoutParameters;
-		        	      String idPass=this.setting.getProperty(authUrl);
-		        	      if(idPass!=null) {
-		        	         StringTokenizer st1 =new StringTokenizer(idPass,":");
-		        	         String id="";
-		        	         String pas="";
-		        	         if(st1!=null){
-		        	            id=st1.nextToken();
-		        	            pas=st1.nextToken();
-		        	            if(id!=null)
-		        	              this.authDialog.setID(id);
-		        	            if(pas!=null)
-		        	              this.authDialog.setPassword(pas);
-		        	         }
-		        	      }
-		        	  }
+		        this.println("Method failed: " + method.getStatusLine());
+		        if((method.getStatusLine()).toString().indexOf("401")>=0){
+		   	        this.authDialog=new AuthDialog(this);
+		            this.authInputFlag=false;
+		        	urlWithoutParameters=getUrlWithoutParameters(url);
+		        	this.authDialog.setProperty("auth-url", urlWithoutParameters);
+		        	this.println("before waitUntilMessageIsReturned");
+//		        	this.authDialog.start();
+		        	this.authDialog.setVisible(true);
+		        	if(this.setting!=null){
+			            urlWithoutParameters=getUrlWithoutParameters(url);
+		        	    String authUrl="basicAuth-"+urlWithoutParameters;
+		        	    String idPass=this.setting.getProperty(authUrl);
+		        	    if(idPass==null){
+		        	       idPass="";
+		        	       this.setting.setProperty(authUrl,idPass );
+		        	    }
+		        	    StringTokenizer st1 =new StringTokenizer(idPass,":");
+		        	    String id="";
+		        	    String pas="";
+		        	    if(st1!=null){
+		        	       id=st1.nextToken();
+		        	       pas=st1.nextToken();
+		        	       if(id!=null)
+		        	           this.authDialog.setID(id);
+		        	       if(pas!=null)
+		        	           this.authDialog.setPassword(pas);
+		        	       }
+		        	    } // if(this.setting!=null)
 
-		        	  this.waitUntilMessageIsReturned(); //!!
-//		        	  this.authDialog.stop(); //!!
-		        	  this.authDialog.setVisible(false);
-		        	  this.println("after waitUntilMessageIsReturned");
-		        	  if(this.loginButtonPressed){
-		        		  this.println("loginButtonPressed");
-		        	     pageText=this.connectToURL(url);
-		        	  }
-		        	  return pageText;
-		          }
-		    }
-		    else{
+		        	    this.waitUntilMessageIsReturned(); //!!
+//		        	    this.authDialog.stop(); //!!
+		        	    this.authDialog.setVisible(false);
+		        	    this.println("after waitUntilMessageIsReturned");
+		        	    if(this.loginButtonPressed){
+		        		   this.println("loginButtonPressed");
+		        	       pageText=this.connectToURL(url);
+		        	    }
+		        	    return pageText;
+		            } // if((method.getStatusLine()).toString().indexOf("401")>=0){
+		        }// if (status != HttpStatus.SC_OK) {
+		        else{
 		    	pageText=this.getText(method);
-		    	/*
-//    		String txt=method.getResponseBodyAsString();
-     		    InputStream is=method.getResponseBodyAsStream();
-     		    InputStreamReader isr=new InputStreamReader(is,this.charset);
-//	     	    InputStreamReader isr=new InputStreamReader(is,"UTF-8");
-//     		    InputStreamReader isr=new InputStreamReader(is);
-		         BufferedReader br=new BufferedReader(isr);
-		        String line="";
-		        pageText="";
-		        while(true){
-		    	   line=br.readLine();
-		    	   pageText=pageText+line+"\n";
-		        	if(line==null) break;
-		    	    this.messageTextArea.append(line+"\n");
-//		    	    System.out.println(line);
-		        }
-		        */
 		    }
+		   
 		}
 		catch(Exception e){
 			this.println(e.toString()+"\n");
 			e.printStackTrace();
 			return null;
 		}
+
 		return pageText;
 	}
 	
@@ -486,6 +510,12 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		this.println("head="+head);
 		this.println("body="+body);
 		this.println("tail="+tail);
+		
+        head=head.replaceAll("&quot;", "\""); //2016 9/22 yamanoue
+        head=head.replaceAll("&lt;", "<");    // 2016 9/22 yamanoue
+        head=head.replaceAll("&gt;", ">");	 // 2016 9/22 yamanoue
+        head=head.replaceAll("&amp;", "&");	 // 2016 9/26 yamanoue
+				
 		this.updateText=head;
 		String actionwork1=form.substring(0,form.indexOf(">"));
 		this.println("actionwork1="+actionwork1);
@@ -596,6 +626,50 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		String output=application.getOutput();
 		replaceTextWith(output);
 	}
+	public String setPageOfTheURL(String url){
+		this.println("editUrl="+url+"\n");
+		this.urlField.setText(url);
+		String x=connectToURL(url);
+		if(x==null) return null;
+//		String x=this.messageTextArea.getText();
+		
+		// extract charSet from <?xml= ...?> which contains charSet;
+		String firstXmltag=getBetween(x,"<?xml","?>");
+		if(firstXmltag==null) return null;
+		this.pageCharSet=this.getTagProperty(firstXmltag,"encoding");
+		if(this.pageCharSet==null)
+			this.pageCharSet="UTF-8";
+		this.println("pageCharSet="+this.pageCharSet);
+		x=getBetween(x,"<body>","</body>");
+		
+		// exclude until <applet
+//		int i=x.indexOf("<applet");
+//		if(i<0) return;
+//		x=x.substring(i);
+		String headerPart=getBetween(x,"<div id=\"header\">","</div>");
+		String pageNamePart=getBetween(headerPart,"<span class=\"small\">","</span>");
+		StringTokenizer st=new StringTokenizer(pageNamePart,"?");
+		this.baseUrl=st.nextToken();
+//		System.out.println("baseUrl="+baseUrl);
+		this.pageName=st.nextToken();
+		return x;
+	}
+	public String setPageOfTheURL2(String url){
+		this.println("editUrl="+url+"\n");
+		this.urlField.setText(url);
+		String x="";
+		try{
+	    x=connectToURL(url);
+		}
+		catch(Exception e){
+			return null;
+		}
+		if(x==null) return null;
+//		String x=this.messageTextArea.getText();
+		
+		
+		return x;
+	}
 	private void replaceTextWith(String x){
 		// System.out.println("updateButton.actionPerformed, event="+evt);
 		//TODO add your code for updateButton.actionPerformed
@@ -692,33 +766,9 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		}
 		return false;
 	}
-	public void readFromPukiwikiPageAndSetData(String url){
+	public String readFromPukiwikiPageAndSetData(String url) {
 		this.println("editUrl="+url+"\n");
-		this.urlField.setText(url);
-		String x=connectToURL(url);
-//		String x=this.messageTextArea.getText();
-		
-		// extract charSet from <?xml= ...?> which contains charSet;
-		String firstXmltag=getBetween(x,"<?xml","?>");
-		if(firstXmltag==null) return;
-		this.pageCharSet=this.getTagProperty(firstXmltag,"encoding");
-		if(this.pageCharSet==null)
-			this.pageCharSet="UTF-8";
-		this.println("pageCharSet="+this.pageCharSet);
-		x=getBetween(x,"<body>","</body>");
-		
-		// exclude until <applet
-//		int i=x.indexOf("<applet");
-//		if(i<0) return;
-//		x=x.substring(i);
-		String headerPart=getBetween(x,"<div id=\"header\">","</div>");
-		String pageNamePart=getBetween(headerPart,"<span class=\"small\">","</span>");
-		StringTokenizer st=new StringTokenizer(pageNamePart,"?");
-		this.baseUrl=st.nextToken();
-//		System.out.println("baseUrl="+baseUrl);
-		this.pageName=st.nextToken();
-//		System.out.println("pageName="+pageName);
-		// extract <pre>...</pre> where the figure is.
+		String x=this.setPageOfTheURL(url);
 		String inw=getBetween(x,"<pre>","</pre>");
 		/*
 		String fig="";
@@ -731,12 +781,14 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 		}
 		*/
 		String input=inw;
-		if(input==null) return;
+		if(input==null) return "ERROR";
         input=input.replaceAll("&quot;", "\"");
         input=input.replaceAll("&lt;", "<");
         input=input.replaceAll("&gt;", ">");
+        input=input.replaceAll("&amp;", "&");	 // 2016 9/26 yamanoue
+        
         application.setInput(input+"\n");
-		
+		return "ok";
 	}
 
 	/*
@@ -780,21 +832,6 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
     	this.readFromPukiwikiPageAndSetData(url) ;   	
     }
 
-//	@Override
-	public void whenCancelButtonClicked(AuthDialog x) {
-		// TODO Auto-generated method stub
-		this.loginButtonPressed=false;
-		this.authInputFlag=true;
-		x.setVisible(false);
-	}
-
-//	@Override
-	public void whenLoginButtonClicked(AuthDialog x) {
-		// TODO Auto-generated method stub
-		this.loginButtonPressed=true;
-		this.authInputFlag=true;
-		x.setVisible(false);
-	}
 	public void println(String x){
 		if(this.showMessagesCheckBox==null) return;
 		if(this.showMessagesCheckBox.isSelected()){
@@ -806,4 +843,88 @@ public class SaveButtonDebugFrame extends JFrame implements AuthDialogListener
 			System.out.println(x);
 		}
 	}
+
+	public void whenLoginButtonClicked(AuthDialog x) {
+		// TODO Auto-generated method stub
+		this.loginButtonPressed=true;
+		this.authInputFlag=true;
+		x.setVisible(false);
+		
+	}
+
+	public void whenCancelButtonClicked(AuthDialog x) {
+		// TODO Auto-generated method stub
+		this.loginButtonPressed=false;
+		this.authInputFlag=true;
+		x.setVisible(false);
+		
+	}
+
+//	@Override
+	public String getOutputText() {
+		// TODO Auto-generated method stub
+//		return this.getOutputText();
+		return application.getOutput();
+	}
+
+//	@Override
+	public boolean isTracing() {
+		// TODO Auto-generated method stub
+//		return this.isTracing();
+		return false;
+	}
+
+//	@Override
+	public String parseCommand(String x) {
+		// TODO Auto-generated method stub
+		String rest[]=new String[1];
+		x=Util.skipSpace(x);
+		if(Util.parseKeyWord(x, "getpage ", rest)){
+			String url=rest[0];
+			String y=this.setPageOfTheURL(url);
+			String inw=getBetween(y,"<pre>","</pre>");
+			String input=inw;
+			if(input==null) return "ERROR";
+	        input=input.replaceAll("&quot;", "\"");
+	        input=input.replaceAll("&lt;", "<");
+	        input=input.replaceAll("&gt;", ">");	 			
+			return input;
+		}
+		if(Util.parseKeyWord(x, "getRawPage ", rest)){
+			String url=rest[0];
+			String y=this.setPageOfTheURL2(url);
+			if(y==null) return "ERROR";
+			return y;
+		}
+		
+		return "ERROR";
+	}
+
+//	@Override
+	public InterpreterInterface lookUp(String x) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	/*
+	public String getOutputText() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean isTracing() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public String parseCommand(String x) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public InterpreterInterface lookUp(String x) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	*/
 }

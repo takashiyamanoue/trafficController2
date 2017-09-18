@@ -1,40 +1,38 @@
 package pukiwikiCommunicator.language;
+
 public class MyDouble extends MyInt
 {
+	public static String kind="mydouble";
+	public boolean isKind(String x){
+		return x.equals(kind);
+	}
     public MyNumber neg()
     {
         return new MyDouble(-val);
     }
     public boolean ne(MyNumber y)
-    {
-        int nt=y.ntype;
-        /*
+    {/*
         if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
             return val!=(double)(((MyInt)y).val);
         }
-        /*
         if(y.getClass().getName().equals("MyDouble")){
         */
-        if(nt==3){
+    	if(y.isKind("myint")){
+    		return val!=(double)(((MyInt)y).val);
+    	}
+    	if(y.isKind("mydouble")){
             return val!=((MyDouble)y).val;
         }
         return false;
     }
     public MyNumber mod(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return new MyDouble(val%((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return new MyDouble(val%((MyDouble)y).val);
         }
         return null;
@@ -73,85 +71,56 @@ public class MyDouble extends MyInt
     }
     public boolean ge(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-         if(y.getClass().getName().equals("MyInt")){
-         */
-         if(nt==2){
+//         if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return val>=(double)(((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return val>=((MyDouble)y).val;
         }
         return false;
    }
     public boolean gt(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	  if(y.isKind("myint")){
             return val>(double)(((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	  if(y.isKind("mydouble")){
             return val>((MyDouble)y).val;
         }
         return false;
     }
     public boolean lt(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+        if(y.isKind("myint")){
             return val<(double)(((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+    	if(y.isKind("mydouble")){
             return val<((MyDouble)y).val;
         }
         return false;
     }
     public boolean eq(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+        if(y.isKind("myint")){
             return val==(double)(((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+        if(y.isKind("mydouble")){
             return val==((MyDouble)y).val;
         }
         return false;
     }
     public boolean le(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return val<=(double)(((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return val<=((MyDouble)y).val;
         }
         return false;
@@ -161,11 +130,8 @@ public class MyDouble extends MyInt
         int i;
         int xi;
         double xd,yd;
-        int nt=y.ntype;
-        /*
-         if(y.getClass().getName().equals("MyInt")){
-         */
-         if(nt==2){
+//         if(y.getClass().getName().equals("MyInt")){
+        if(y.isKind("myint")){
             int yy=((MyInt)y).val;
             if(yy==0) return new MyDouble(1.0);
             if(yy>0){
@@ -180,10 +146,8 @@ public class MyDouble extends MyInt
             }
             return null;
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+        if(y.isKind("mydouble")){
             yd=((MyDouble)y).val;
             if(yd==0.0) new MyDouble(1.0);
             if(val<=0.0) return null;
@@ -194,77 +158,48 @@ public class MyDouble extends MyInt
     }
     public MyNumber div(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return new MyDouble(val/((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return new MyDouble(val/((MyDouble)y).val);
         }
         return null;
     }
     public MyNumber mul(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return new MyDouble(val*((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return new MyDouble(val*((MyDouble)y).val);
         }
         return null;
     }
     public MyNumber sub(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return new MyDouble(val-((MyInt)y).val);
         }
-        /*
-        if(y.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+//        if(y.getClass().getName().equals("MyDouble")){
+    	if(y.isKind("mydouble")){
             return new MyDouble(val-((MyDouble)y).val);
         }
         return null;
     }
     public MyNumber add(MyNumber y)
     {
-        int nt=y.ntype;
-        /*
-        if(y.getClass().getName().equals("MyInt")){
-        */
-        if(nt==1){
-             String x=((MyString)y).val;
-             double r=0.0;
-             try{
-                r=(new Double(x)).doubleValue();
-             }
-             catch(Exception e){
-                return null;
-             }
-                return new MyDouble(val+r);
-        }
-        if(nt==2){
+//        if(y.getClass().getName().equals("MyInt")){
+    	if(y.isKind("myint")){
             return new MyDouble(val+((MyInt)y).val);
         }
 //        if(y.getClass().getName().equals("MyDouble")){
-        if(nt==3){
+    	if(y.isKind("mydouble")){
             return new MyDouble(val+((MyDouble)y).val);
         }
         return null;
@@ -272,8 +207,8 @@ public class MyDouble extends MyInt
     public MyDouble(double d)
     {
         val=d;
-        ntype=3;
     }
     public double val;
 }
+
 

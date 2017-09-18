@@ -36,9 +36,11 @@ public class MainWatch extends JFrame {
 	private JRadioButton tcp;
 	private JRadioButton udp;
 	private JRadioButton otherV4Protocol;	
+	private JRadioButton allV4Protocol;
 	private JRadioButton tcpV6;
 	private JRadioButton udpV6;	
 	private JRadioButton otherV6Protocol;
+	private JRadioButton allV6Protocol;
 	private JRadioButton allProtocol;
 	private JRadioButton allOtherProtocol;
 	private ButtonGroup protocolGroup;
@@ -99,19 +101,24 @@ public class MainWatch extends JFrame {
 		tcp = new JRadioButton("tcpV4");
 		udp = new JRadioButton("udpV4");
 		otherV4Protocol = new JRadioButton("other v4 protocol");
+		allV4Protocol = new JRadioButton("All v4 protocol");
 		tcpV6 = new JRadioButton("tcpV6");
 		udpV6 = new JRadioButton("udpV6");
 		otherV6Protocol = new JRadioButton("other v6 protocol");
+		allV6Protocol = new JRadioButton("All vt protocol");
 		allOtherProtocol = new JRadioButton("all other protocol");
 		
 		protocolGroup = new ButtonGroup();
 		protocolGroup.add(tcp);
 		protocolGroup.add(udp);
 		protocolGroup.add(otherV4Protocol);
+		protocolGroup.add(allV4Protocol);
 		protocolGroup.add(allProtocol);
 		protocolGroup.add(tcpV6);
 		protocolGroup.add(udpV6);
 		protocolGroup.add(otherV6Protocol);
+		protocolGroup.add(allV6Protocol);
+		protocolGroup.add(allOtherProtocol);
 		
 		allProtocol.setSelected(true);
     	protocolBits=0xff;
@@ -204,6 +211,13 @@ public class MainWatch extends JFrame {
 				otherV4ProtocolMouseClicked(evt);
 			}
 		});
+		jmProtocol.add(allV4Protocol);
+		udp.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent evt) {
+				allV4ProtocolMouseClicked(evt);
+			}
+		});
+		
 		
 		jmProtocol.add(tcpV6);
 		tcp.addMouseListener(new MouseAdapter() {
@@ -223,6 +237,13 @@ public class MainWatch extends JFrame {
 				otherV6ProtocolMouseClicked(evt);
 			}
 		});				
+		jmProtocol.add(allV6Protocol);
+		udp.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent evt) {
+				allV6ProtocolMouseClicked(evt);
+			}
+		});
+		
 		jmProtocol.add(allOtherProtocol);
 		allOtherProtocol.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt) {
@@ -511,6 +532,9 @@ public class MainWatch extends JFrame {
 	private void otherV4ProtocolMouseClicked(MouseEvent evt){
     	protocolBits=0x004;		
 	}
+	private void allV4ProtocolMouseClicked(MouseEvent evt){
+    	protocolBits=0x00f;		
+	}	
     private void tcpV6MouseClicked(MouseEvent evt) {
 //    	System.out.println("tcp.mouseClicked, event="+evt);
     	//TODO add your code for tcp.mouseClicked
@@ -525,16 +549,13 @@ public class MainWatch extends JFrame {
 	private void otherV6ProtocolMouseClicked(MouseEvent evt){
     	protocolBits=0x030;		
 	}
+	
     private void allProtocolMouseClicked(MouseEvent evt) {
 //    	System.out.println("all2.mouseClicked, event="+evt);
     	//TODO add your code for all2.mouseClicked
     	protocolBits=0xfff;
     }
-    private void allV4ProtocolMouseClicked(MouseEvent evt) {
-//    	System.out.println("all2.mouseClicked, event="+evt);
-    	//TODO add your code for all2.mouseClicked
-    	protocolBits=0x00f;
-    }
+
     private void allV6ProtocolMouseClicked(MouseEvent evt) {
 //    	System.out.println("all2.mouseClicked, event="+evt);
     	//TODO add your code for all2.mouseClicked

@@ -1,12 +1,10 @@
 package pukiwikiCommunicator.language;
-public class ListCell extends LispObject
-{
-    public ListCell()
-    {
-        ltype=0;
-    }
 
+class ListCell extends LispObject
+{
     public LispObject d;
     public LispObject a;
+    public boolean isAtom(){
+    	return false;
+    }
 }
-

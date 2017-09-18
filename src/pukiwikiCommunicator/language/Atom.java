@@ -1,12 +1,14 @@
 package pukiwikiCommunicator.language;
+
 public class Atom extends LispObject
 {
-    public int atype=0;
-
-    public Atom()
-    {
-        ltype=1;
-    }
-
+	private static String kind="atom";
+	public boolean isAtom(){
+		return true;
+	}
+	public boolean isKind(String x){
+		return x.equals(kind);
+	}
 }
+
 

@@ -1,14 +1,11 @@
 package pukiwikiCommunicator.language;
+
 public class MyNumber extends Atom
 {
-    public static int StringTYPE=1;
-
-    public static int DoubleTYPE=3;
-
-    public static int IntTYPE=2;
-
-    public int ntype=0;
-
+	public static String kind="number";
+	public boolean isKind(String x){
+		return x.equals(kind);
+	}
     public MyNumber neg()
     {
         return null;
@@ -93,17 +90,31 @@ public class MyNumber extends Atom
     {
         return null;
     }
+    public MyNumber band(MyNumber y)
+    {
+    	return null;
+    }
+    public MyNumber bor(MyNumber y)
+    {
+    	return null;
+    }
+    public MyNumber bxor(MyNumber y)
+    {
+    	return null;
+    }
+    public MyNumber bnot()
+    {
+    	return null;
+    }
+  
     public MyNumber()
     {
-        atype=1;
-        ntype=0;
     }
     public MyNumber(int x)
     {
         val=x;
-        atype=1;
-        ntype=0;
     }
     public int val;
 }
+
 

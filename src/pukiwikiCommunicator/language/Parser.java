@@ -1,24 +1,26 @@
 package pukiwikiCommunicator.language;
-import javax.swing.JTextArea;
+
+import java.lang.*;
+import java.awt.*;
+//import android.widget.EditText;
 public class Parser extends java.lang.Object
 {
-    public JTextArea message;
+    public InterpreterInterface message;
     public Parser()
     {
     }
     public boolean parseExpressionList(LispObject x, LispObject type)
     {
         ListCell w=new ListCell();
-        w.d=ALisp.nilSymbol;
+        w.d=lisp.nilSymbol;
         if(!parseExpression(w,type)) return false;
         while(is(",")){
             ListCell y=new ListCell();
             if(!parseExpression(y,type)) return false;
-            y.d=ALisp.nilSymbol;
-//            ALisp.nconc(w,y);
+            y.d=lisp.nilSymbol;
             lisp.nconc(w,y);
         }
-        ((ListCell)x).a=ALisp.cons(lisp.sym_list,w);
+        ((ListCell)x).a=lisp.cons(lisp.sym_list,w);
         return true;
     }
     public boolean parseParenList(LispObject x,LispObject type)
@@ -33,14 +35,18 @@ public class Parser extends java.lang.Object
     {
         ListCell y=new ListCell();
         ListCell w=new ListCell();
-        y.d=ALisp.nilSymbol;
-        if(!isName(w,type)) return false;
+        y.d=lisp.nilSymbol;
+        LispObject prevPointer=pointer;
+        if(!isName(w,type)) {
+        	pointer=prevPointer;
+        	return false;
+        }
         if(parseParenList(y,type)){
             ((ListCell)lt).a=lisp.recSymbol("dimension");
-            w.d=ALisp.nilSymbol;
+            w.d=lisp.nilSymbol;
 //            LispObject u=lisp.cons(lisp.recSymbol("quote"),w);
 //            ((ListCell)x).a=lisp.cons(u,y);
-            ((ListCell)x).a=ALisp.cons(w.a,y);
+            ((ListCell)x).a=lisp.cons(w.a,y);
 //            ((ListCell)x).a=w.a;
             return true;
         }
@@ -50,6 +56,7 @@ public class Parser extends java.lang.Object
             return true;
         }
     }
+
     public boolean parseAssign(LispObject x)
     {
         boolean dmy;
@@ -57,23 +64,35 @@ public class Parser extends java.lang.Object
         ListCell left=new ListCell();
         ListCell right=new ListCell();
         ListCell type=new ListCell();
-        if(!leftHandSide(left,type,lt)) return false;
+        LispObject prevPointer=pointer;
+        if(!leftHandSide(left,type,lt)) {
+        	pointer=prevPointer;
+        	return false;
+        }
         dmy=rB();
-        if(!is("=")) return false;
-        if(!parseExpression(right,type)) return false;
-        if(ALisp.eq(lt.a,lisp.recSymbol("dimension"))){
-            right.d=ALisp.nilSymbol;
-//            ALisp.nconc(((ListCell)left).a,right);
+        if(!is("=")) {
+        	pointer=prevPointer;
+        	return false;
+//            ((ListCell)x).a= ((ListCell)left).a;
+//        	return true;
+        }
+        if(!parseExpression(right,type)) {
+        	pointer=prevPointer;
+        	return false;
+        }
+        if(lisp.eq(lt.a,lisp.recSymbol("dimension"))){
+            right.d=lisp.nilSymbol;
             lisp.nconc(((ListCell)left).a,right);
-            ((ListCell)x).a=ALisp.cons(lisp.recSymbol("aput"),
+            ((ListCell)x).a=lisp.cons(lisp.recSymbol("aput"),
                                        ((ListCell)left).a);
             return true;
         }
-        if(ALisp.eq(lt.a,lisp.recSymbol("var"))){
+        if(lisp.eq(lt.a,lisp.recSymbol("var"))){
 //            LispObject quoted=consUnaryOpr("quote",left.a);
             ((ListCell)x).a=consBinaryOpr(lisp.sym_setq,left.a,right.a);
             return true;
         }
+        pointer=prevPointer;
         return false;
     }
     public LispObject parseLine()
@@ -89,7 +108,7 @@ public class Parser extends java.lang.Object
         pointer=line;
         return parseLine();
     }
-    public Parser(ALisp l,JTextArea m)
+    public Parser(ALisp l,InterpreterInterface m)
     {
         line=null;
         pointer=null;
@@ -110,8 +129,8 @@ public class Parser extends java.lang.Object
     public LispObject consUnaryOpr(String opr, LispObject x)
     {
         LispObject u,v;
-        v=ALisp.cons(x,ALisp.nilSymbol);
-        u=ALisp.cons(lisp.recSymbol(opr),v);
+        v=lisp.cons(x,lisp.nilSymbol);
+        u=lisp.cons(lisp.recSymbol(opr),v);
         return u;
     }
     public boolean parsePrint(LispObject x)
@@ -127,48 +146,33 @@ public class Parser extends java.lang.Object
     public LispObject consBinaryOpr(LispObject opr,LispObject x, LispObject y)
     {
         LispObject u,v,w;
-        w=ALisp.cons(y,ALisp.nilSymbol);
-        v=ALisp.cons(x,w);
-        u=ALisp.cons(opr,v);
+        w=lisp.cons(y,lisp.nilSymbol);
+        v=lisp.cons(x,w);
+        u=lisp.cons(opr,v);
         return u;
     }
     public boolean isNumber(LispObject x,LispObject type)
     {
-        if(ALisp.Null(pointer)) return false;
+        if(lisp.Null(pointer)) return false;
         LispObject s=((ListCell)pointer).a;
-        if(s.ltype==0) return false; // this is not atom
-        int at=((Atom)s).atype;
-        if(at==0) return false; // this atom is symbol, is not number.
-        int nt=((MyNumber)s).ntype;
-        
-        /*
-        if(s.getClass().getName().equals("MyInt")){
-        */
-        if(nt==2){
+        if(s.isKind("myint")){
             ((ListCell)x).a=s; ((ListCell)type).a=lisp.recSymbol("number");
             pointer=((ListCell)pointer).d;
             return true;
         }
-        /*
-        if(s.getClass().getName().equals("MyDouble")){
-        */
-        if(nt==3){
+        if(s.isKind("mydouble")){
             ((ListCell)x).a=s; ((ListCell)type).a=lisp.recSymbol("number");
             pointer=((ListCell)pointer).d;
             return true;
         }
-        /*
-        if(s.getClass().getName().equals("MyString")){
-        */
-        if(nt==1){
+//        if(s.getClass().getName().equals("MyString")){
+        if(s.isKind("mystring")){
             ((ListCell)x).a=s; ((ListCell)type).a=lisp.recSymbol("string");
             pointer=((ListCell)pointer).d;
             return true;
         }
-        /*
-        if(s.getClass().getName().equals("MyNumber")){
-        */
-        if(nt==0){
+//        if(s.getClass().getName().equals("MyNumber")){
+        if(s.isKind("mynumber")){
             ((ListCell)x).a=s; ((ListCell)type).a=lisp.recSymbol("number");
             pointer=((ListCell)pointer).d;
             return true;
@@ -177,22 +181,20 @@ public class Parser extends java.lang.Object
     }
     public boolean isName(LispObject x, LispObject type)
     {
-        if(ALisp.Null(pointer)) return false;
+        if(lisp.Null(pointer)) return false;
         LispObject s=((ListCell)pointer).a;
-        /*
-        if(!s.getClass().getName().equals("ListCell")) return false;
-        */
-        if(s.ltype!=0) return false;
+//        if(!s.getClass().getName().equals("ListCell")) return false;
+        if(s.isAtom()) return false;
 //        if(isReservedNR()) return false;
-        if(!ALisp.eq(ALisp.car(s),lisp.recSymbol("name"))) return false;
-        ((ListCell)x).a=ALisp.car(ALisp.cdr(s));
+        if(!lisp.eq(lisp.car(s),lisp.recSymbol("name"))) return false;
+        ((ListCell)x).a=lisp.car(lisp.cdr(s));
         ((ListCell)type).a=lisp.recSymbol("number");
         pointer=((ListCell)pointer).d;
         return true;
     }
     public boolean isReservedNR()
     {
-        if(ALisp.Null(pointer)) return false;
+        if(lisp.Null(pointer)) return false;
         Symbol sym=(Symbol)(((ListCell)pointer).a);
         String str=(String)(lisp.symbolTable.get(sym));
         if(isReserved(str)) return true;
@@ -210,15 +212,10 @@ public class Parser extends java.lang.Object
     public boolean is(String x)
     {
         String y;
-        if(ALisp.Null(pointer)) return false;
+        if(lisp.Null(pointer)) return false;
         LispObject o=((ListCell)pointer).a;
-        /*
-        if(!(o.getClass().getName().equals("Symbol"))) return false;
-        */
-        if(o.ltype==0) return false; // if o is list then return false;
-        int at=((Atom)o).atype;      // o is atom
-        if(at!=0) return false;      // however, o is not symbol, return false;
-        
+//        if(!(o.getClass().getName().equals("Symbol"))) return false;
+        if(!o.isKind("symbol")) return false;
         y=symbol2str((Symbol)o);
         if(!y.equals(x)) return false;
         pointer=((ListCell)pointer).d;
@@ -227,7 +224,7 @@ public class Parser extends java.lang.Object
     public boolean parseElement(LispObject x,LispObject type)
     {
         boolean dmy;
-        boolean sign=false;
+        char sign=' ';
         LispObject w,v;
         dmy=rB();
         if(is("(")){
@@ -235,22 +232,29 @@ public class Parser extends java.lang.Object
             if(is(")")) return true;
             return false;
         }
-        if(is("-")) {sign=true; dmy=rB();}
+        if(is("-")) {sign='-'; dmy=rB();}
+        if(is("!")) {sign='!'; dmy=rB();}        
         if(isNumber(x,type)) {
-            if(sign){
-                w=ALisp.cons(ALisp.car(x),ALisp.nilSymbol);
-                w=ALisp.cons(lisp.recSymbol("neg"),w);
+            if(sign=='-'){
+                w=lisp.cons(lisp.car(x),lisp.nilSymbol);
+                w=lisp.cons(lisp.recSymbol("neg"),w);
                 ((ListCell)x).a=w;
             }
+            if(sign=='!'){
+                w=lisp.cons(lisp.car(x),lisp.nilSymbol);
+                w=lisp.cons(lisp.recSymbol("bnot"),w);
+                ((ListCell)x).a=w;
+            }
+            
             return true;
         }
 //        if(isReservedNR()) return false;
         if(isName(x,type)){
             ListCell y=new ListCell();
-            y.d=ALisp.nilSymbol;
+            y.d=lisp.nilSymbol;
             if(parseParenList(y,type)){
                 ListCell u=new ListCell();
-                u.d=ALisp.nilSymbol;
+                u.d=lisp.nilSymbol;
                 u.a=((ListCell)x).a;
 //                LispObject f=lisp.get(((ListCell)x).a,
 //                                      lisp.recSymbol("lambda"));
@@ -271,11 +275,17 @@ public class Parser extends java.lang.Object
 
 
             }
-            if(sign){
+            if(sign=='-'){
               w=lisp.cons(lisp.car(x),lisp.nilSymbol);
               w=lisp.cons(lisp.recSymbol("neg"),w);
               ((ListCell)x).a=w;
             }
+            if(sign=='!'){
+                w=lisp.cons(lisp.car(x),lisp.nilSymbol);
+                w=lisp.cons(lisp.recSymbol("bnot"),w);
+                ((ListCell)x).a=w;
+            }
+            
             return true;
         }
         return false;
@@ -297,20 +307,33 @@ public class Parser extends java.lang.Object
     public boolean parseTerm(LispObject x, LispObject type)
     {
         ListCell y=new ListCell();
+        boolean dmy;        
         if(!parseFactor(x,type)) return false;
+        dmy=rB();        
         do{
             if(is("*")){
                 if(parseFactor(y,type)){
                   ((ListCell)x).a=consBinaryOpr(lisp.sym_m_mul,
                      ((ListCell)x).a,((ListCell)y).a);
                 }
+                dmy=rB();
             }
             else if(is("/")){
                 if(parseFactor(y,type)){
                     ((ListCell)x).a=consBinaryOpr(lisp.sym_m_div,
                        ((ListCell)x).a,((ListCell)y).a);
                 }
+                dmy=rB();                
             }
+            else if(is("&")){
+                if(parseFactor(y,type)){
+                    ((ListCell)x).a=consBinaryOpr(lisp.sym_m_band,
+                       ((ListCell)x).a,((ListCell)y).a);
+                }
+                dmy=rB();
+                
+            }
+            
             else return true;
         } while(true);
     }
@@ -337,6 +360,14 @@ public class Parser extends java.lang.Object
                 }
                 dmy=rB();
             }
+            else if(is("|")){
+                if(parseTerm(y,type)){
+                    ((ListCell)x).a=consBinaryOpr(lisp.sym_m_bor,
+                       ((ListCell)x).a,((ListCell)y).a);
+                }
+                dmy=rB();
+            }
+            
             else return true;
         } while(true);
     }
@@ -373,4 +404,5 @@ public class Parser extends java.lang.Object
         lisp=l;
     }
 }
+
 
